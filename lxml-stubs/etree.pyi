@@ -2,6 +2,7 @@
 # This is *far* from complete, and the stubgen-generated ones crash mypy.
 # Any use of `Any` below means I couldn't figure out the type.
 
+import sys
 from typing import (
     IO,
     Any,
@@ -31,7 +32,10 @@ from ._types import (
     _OptionalNamespace,
 )
 
-from typing_extensions import Literal, Protocol
+if sys.version_info < (3, 8):
+    from typing_extensions import Literal, Protocol
+else:
+    from typing import Literal, Protocol
 
 # dummy for missing stubs
 def __getattr__(name: str) -> Any: ...
