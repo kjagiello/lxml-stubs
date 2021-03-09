@@ -1,8 +1,20 @@
-# lxml-stubs
 <!-- start-no-pypi -->
-[![Python Tests](https://github.com/lxml/lxml-stubs/workflows/Python%20Tests/badge.svg)](https://github.com/lxml/lxml-stubs/actions?query=workflow%3A%22Python+Tests%22)
-[![pypi](https://img.shields.io/pypi/v/lxml-stubs.svg)](https://pypi.python.org/pypi/lxml-stubs/)
+[![Python Tests](https://github.com/abelcheung/lxml-stubs/workflows/Python%20Tests/badge.svg)](https://github.com/abelcheung/lxml-stubs/actions?query=workflow%3A%22Python+Tests%22)
 <!-- end-no-pypi -->
+
+
+## Relationship with official lxml-stubs
+This fork is an attempt to move forward with unstable changes, while official
+one is under semi-dormant state for months. If upstream were become active
+again, some selected changes can be submitted in future.
+
+Right now this repo uses all unmerged PR as basis (20, 24, 25, 26), and all
+further changes will go into `rewrite` branch. Following incompatible changes
+are planned in mind:
+
+- Python 3 only (complexity for this stub project is already high enough
+  without the numerous `str`/`byte` argument/input/output combinations)
+
 
 ## About
 This repository contains external type annotations (see
