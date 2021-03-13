@@ -37,9 +37,6 @@ if sys.version_info < (3, 8):
 else:
     from typing import Literal, Protocol
 
-# dummy for missing stubs
-def __getattr__(name: str) -> Any: ...
-
 _AnySmartStr = Union["_ElementUnicodeResult", "_ElementStringResult"]
 _TagName = Union[str, bytes, QName]
 # XPath object - http://lxml.de/xpathxslt.html#xpath-return-values
@@ -121,7 +118,7 @@ class _Element(Iterable["_Element"], Sized):
         self, tag: Optional[_TagName] = ..., *tags: _TagName
     ) -> Iterable[_Element]: ...
     def iterchildren(
-        self, tag: Optional[_TagName] = ..., reversed: bool = False, *tags: _TagName
+        self, tag: Optional[_TagName] = ..., reversed: bool = ..., *tags: _TagName
     ) -> Iterable[_Element]: ...
     def makeelement(
         self,
@@ -148,7 +145,7 @@ class _Element(Iterable["_Element"], Sized):
     def __iter__(self) -> ElementChildIterator: ...
     def items(self) -> Sequence[Tuple[_AnyStr, _AnyStr]]: ...
     def iterfind(
-        self, path: str, namespace: _OptionalNamespace = None
+        self, path: str, namespace: _OptionalNamespace = ...
     ) -> Iterator["_Element"]: ...
 
 class ElementBase(_Element): ...
@@ -195,10 +192,10 @@ class _ElementTree:
         **_variables: Any
     ) -> _ElementTree: ...
 
-class __ContentOnlyEleement(_Element): ...
-class _Comment(__ContentOnlyEleement): ...
+class __ContentOnlyElement(_Element): ...
+class _Comment(__ContentOnlyElement): ...
 
-class _ProcessingInstruction(__ContentOnlyEleement):
+class _ProcessingInstruction(__ContentOnlyElement):
     target: _AnyStr
 
 class _Attrib:
@@ -236,7 +233,7 @@ class QName:
     text = ...  # type: str
     def __init__(
         self,
-        text_or_uri_element: Union[None, _AnyStr, _Element],
+        text_or_uri_or_element: Union[None, _AnyStr, _Element],
         tag: Optional[_AnyStr] = ...,
     ) -> None: ...
 
@@ -266,7 +263,6 @@ class CustomElementClassLookup(FallbackElementClassLookup):
     ) -> Optional[Type[ElementBase]]: ...
 
 class _BaseParser:
-    def __getattr__(self, name: str) -> Any: ...  # Incomplete
     def copy(self) -> _BaseParser: ...
     def makeelement(
         self,
@@ -283,7 +279,6 @@ class _BaseParser:
     ) -> None: ...
 
 class _FeedParser(_BaseParser):
-    def __getattr__(self, name: str) -> Any: ...  # Incomplete
     def close(self) -> _Element: ...
     def feed(self, data: _AnyStr) -> None: ...
 
@@ -431,7 +426,7 @@ def tostring(
 def tostring(
     element_or_tree: Union[_Element, _ElementTree],
     # Should be anything but "unicode", cannot be typed
-    encoding: Optional[_KnownEncodings] = None,
+    encoding: Optional[_KnownEncodings] = ...,
     method: str = ...,
     xml_declaration: bool = ...,
     pretty_print: bool = ...,

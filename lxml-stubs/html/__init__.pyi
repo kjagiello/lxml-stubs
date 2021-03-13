@@ -62,7 +62,6 @@ class HtmlMixin:
         resolve_base_href: bool = ...,
         base_href: str = ...,
     ) -> None: ...
-    def __getattr__(self, name: str) -> Any: ...  # incomplete
 
 class HTMLParser(_HTMLParser):
     pass
@@ -83,4 +82,3 @@ def fragments_fromstring(
 def fromstring(
     html: _AnyStr, base_url: str = ..., parser: "_BaseParser" = ..., **kw
 ) -> "_Element": ...
-def __getattr__(name: str) -> Any: ...  # incomplete
