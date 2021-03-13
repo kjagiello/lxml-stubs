@@ -12,7 +12,7 @@ from typing import (
 
 from typing_extensions import Literal
 
-from .._types import _AnyStr
+from .._types import basestring
 from ..etree import HTMLParser as _HTMLParser
 from ..etree import XMLParser as _XMLParser
 from ..etree import _AnySmartStr, _BaseParser, _Element
@@ -70,15 +70,15 @@ class XHTMLParser(_XMLParser):
     pass
 
 def document_fromstring(
-    html: _AnyStr, parser: "_BaseParser" = ..., ensure_head_body: bool = ..., **kw
+    html: basestring, parser: "_BaseParser" = ..., ensure_head_body: bool = ..., **kw
 ) -> "_Element": ...
 def fragments_fromstring(
-    html: _AnyStr,
+    html: basestring,
     no_leading_text: bool = ...,
     base_url: str = ...,
     parser: "_BaseParser" = ...,
     **kw
 ) -> "_Element": ...
 def fromstring(
-    html: _AnyStr, base_url: str = ..., parser: "_BaseParser" = ..., **kw
+    html: basestring, base_url: str = ..., parser: "_BaseParser" = ..., **kw
 ) -> "_Element": ...

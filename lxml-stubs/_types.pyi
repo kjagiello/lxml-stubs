@@ -1,10 +1,13 @@
+import sys
 from typing import Any, Dict, List, Mapping, Optional, Tuple, Union
 
-# We do *not* want `typing.AnyStr` because it is a `TypeVar`, which is an
-# unnecessary constraint. It seems reasonable to constrain each
-# List/Dict argument to use one type consistently, though, and it is
-# necessary in order to keep these brief.
-_AnyStr = Union[str, bytes]
+# typing.AnyStr WILL be used in multiple places like string replace
+# or attribute handling, where input and output ARE related.
+# Previous naming of _AnyStr would be recipe for hard to discover
+# typo. Borrow basestring name from Python2 here.
+
+if sys.version_info > (3,):
+    basestring = Union[str, bytes]
 
 _ListAnyStr = Union[List[str], List[bytes]]
 _DictAnyStr = Union[Dict[str, str], Dict[bytes, bytes]]

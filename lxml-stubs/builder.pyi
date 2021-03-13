@@ -1,6 +1,6 @@
 from typing import Any, Callable, Mapping, Optional, Type, TypeVar
 
-from ._types import _AnyStr
+from ._types import basestring
 from .etree import _Element
 
 _T = TypeVar("_T")
@@ -10,7 +10,7 @@ class ElementMaker:
         self,
         typemap: Optional[Mapping[Type[_T], Callable[[_Element, _T], None]]] = ...,
         namespace: Optional[str] = ...,
-        nsmap: Optional[Mapping[Optional[_AnyStr], _AnyStr]] = ...,
+        nsmap: Optional[Mapping[Optional[basestring], basestring]] = ...,
         # makeelement is callable of same arg as etree.Element()
         makeelement: Optional[Callable[..., _Element]] = ...,
     ) -> None: ...
@@ -22,7 +22,7 @@ class ElementMaker:
         # as children, typemap can be expanded to make sure item of any
         # type is accepted. So it can't be typed.
         *children: Any,
-        **attrib: _AnyStr,
+        **attrib: basestring,
     ) -> _Element: ...
     # __getattr__ here is special. ElementMaker is a factory that generates
     # element of *any* tag, as long as tag name does not conflict with basic
