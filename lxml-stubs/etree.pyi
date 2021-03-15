@@ -28,8 +28,8 @@ from ._types import (
     _Dict_Tuple2AnyStr_Any,
     _DictAnyStr,
     _ListAnyStr,
-    _NSMap,
-    _OptionalNamespace,
+    _NSMapArg,
+    _NonDefaultNSMapArg,
 )
 
 if sys.version_info < (3, 8):
@@ -93,16 +93,16 @@ class _Element(Iterable["_Element"], Sized):
     def append(self, element: "_Element") -> None: ...
     def cssselect(self, expression: str) -> List[_Element]: ...
     def find(
-        self, path: str, namespaces: _OptionalNamespace = ...
+        self, path: str, namespaces: _NSMapArg = ...
     ) -> Optional["_Element"]: ...
     def findtext(
         self,
         path: str,
         default: Optional[str] = ...,
-        namespaces: _OptionalNamespace = ...,
+        namespaces: _NSMapArg = ...,
     ) -> Optional[str]: ...
     def findall(
-        self, name: str, namespaces: _OptionalNamespace = ...
+        self, name: str, namespaces: _NSMapArg = ...
     ) -> List["_Element"]: ...
     def clear(self) -> None: ...
     @overload
@@ -124,7 +124,7 @@ class _Element(Iterable["_Element"], Sized):
         self,
         _tag: _TagName,
         attrib: Optional[_DictAnyStr] = ...,
-        nsmap: Optional[_NSMap] = ...,
+        nsmap: _NSMapArg = ...,
         **_extra: Any
     ) -> _Element: ...
     def remove(self, element: _Element) -> None: ...
@@ -132,7 +132,7 @@ class _Element(Iterable["_Element"], Sized):
     def xpath(
         self,
         _path: basestring,
-        namespaces: Optional[_DictAnyStr] = ...,
+        namespaces: _NonDefaultNSMapArg = ...,
         extensions: Any = ...,
         smart_strings: bool = ...,
         **_variables: _XPathObject
@@ -141,11 +141,11 @@ class _Element(Iterable["_Element"], Sized):
     text = ...  # type: Optional[basestring]
     tag = ...  # type: str
     tail = ...  # type: Optional[basestring]
-    nsmap = ...  # type: _NSMap
+    nsmap: Dict[Optional[str], str] = ...
     def __iter__(self) -> ElementChildIterator: ...
     def items(self) -> Sequence[Tuple[basestring, basestring]]: ...
     def iterfind(
-        self, path: str, namespace: _OptionalNamespace = ...
+        self, path: str, namespaces: _NSMapArg = ...
     ) -> Iterator["_Element"]: ...
 
 class ElementBase(_Element): ...
@@ -179,7 +179,7 @@ class _ElementTree:
     def xpath(
         self,
         _path: basestring,
-        namespaces: Optional[_DictAnyStr] = ...,
+        namespaces: _NonDefaultNSMapArg = ...,
         extensions: Any = ...,
         smart_strings: bool = ...,
         **_variables: _XPathObject
@@ -268,7 +268,7 @@ class _BaseParser:
         self,
         _tag: basestring,
         attrib: Optional[Union[_DictAnyStr, _Attrib]] = ...,
-        nsmap: Optional[_NSMap] = ...,
+        nsmap: _NSMapArg = ...,
         **_extra: Any
     ) -> _Element: ...
     def setElementClassLookup(
@@ -366,14 +366,14 @@ def Comment(text: Optional[basestring] = ...) -> _Comment: ...
 def Element(
     _tag: basestring,
     attrib: Optional[_DictAnyStr] = ...,
-    nsmap: Optional[_NSMap] = ...,
+    nsmap: _NSMapArg = ...,
     **extra: basestring
 ) -> _Element: ...
 def SubElement(
     _parent: _Element,
     _tag: basestring,
     attrib: Optional[_DictAnyStr] = ...,
-    nsmap: Optional[_NSMap] = ...,
+    nsmap: _NSMapArg = ...,
     **extra: basestring
 ) -> _Element: ...
 def ElementTree(
@@ -399,7 +399,7 @@ def XML(
 ) -> _Element: ...
 def cleanup_namespaces(
     tree_or_element: Union[_Element, _ElementTree],
-    top_nsmap: Optional[_NSMap] = ...,
+    top_nsmap: _NSMapArg = ...,
     keep_ns_prefixes: Optional[Iterable[basestring]] = ...,
 ) -> None: ...
 def parse(
@@ -476,7 +476,7 @@ class XPath:
         self,
         path: basestring,
         *,
-        namespaces: Optional[basestring] = ...,
+        namespaces: _NonDefaultNSMapArg = ...,
         extensions: Optional[basestring] = ...,
         regexp: bool = ...,
         smart_strings: bool = ...

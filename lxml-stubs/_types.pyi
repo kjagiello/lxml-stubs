@@ -12,5 +12,19 @@ if sys.version_info > (3,):
 _ListAnyStr = Union[List[str], List[bytes]]
 _DictAnyStr = Union[Dict[str, str], Dict[bytes, bytes]]
 _Dict_Tuple2AnyStr_Any = Union[Dict[Tuple[str, str], Any], Tuple[bytes, bytes], Any]
-_NSMap = Union[Dict[Union[bytes, None], bytes], Dict[Union[str, None], str]]
-_OptionalNamespace = Optional[Mapping[str, Any]]
+
+# - Prefix and URI are encoded separately as input arg, so no need for AnyStr.
+# - Namespace prefix/uri in lxml is only documented in form of mapping
+#   officially.
+#
+#   Although some places also accept alternative structures (e.g. ElementMaker
+#   accepts a list of (prefix,uri) pairs due to dict() conversion), they are
+#   considered implementation detail and not guaranteed to useful globally.
+#   As example, _Element.find() and friends don't accept the list form as nsmap.
+#
+_NSMapArg = Optional[Mapping[Optional[basestring], basestring]]
+
+# Default NS not acceptable for XPath and XSLT
+# https://lxml.de/xpathxslt.html#namespaces-and-prefixes
+#
+_NonDefaultNSMapArg = Optional[Mapping[basestring, basestring]]
