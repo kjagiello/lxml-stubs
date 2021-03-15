@@ -1,6 +1,8 @@
-# Hand-written stub for lxml.etree as used by mypy.report.
-# This is *far* from complete, and the stubgen-generated ones crash mypy.
-# Any use of `Any` below means I couldn't figure out the type.
+#
+# A few thing worth noting:
+# - Read-only cython attributes are emulated with read-only properties
+# - Some basic types are split into _types.pyi
+#
 
 import sys
 from typing import (
@@ -37,24 +39,12 @@ if sys.version_info < (3, 8):
 else:
     from typing import Literal, Protocol
 
-_AnySmartStr = Union["_ElementUnicodeResult", "_ElementStringResult"]
-_TagName = Union[str, bytes, QName]
-# XPath object - http://lxml.de/xpathxslt.html#xpath-return-values
-_XPathObject = Union[
-    bool,
-    float,
-    _AnySmartStr,
-    basestring,
-    List[
-        Union[
-            "_Element",
-            _AnySmartStr,
-            basestring,
-            Tuple[Optional[basestring], Optional[basestring]],
-        ]
-    ],
-]
+#
+# Basic variables and constants
+#
+
 _T = TypeVar("_T")
+
 _KnownEncodings = Literal[
     "ASCII",
     "ascii",
@@ -66,23 +56,76 @@ _KnownEncodings = Literal[
     "us-ascii",
 ]
 
+#
+# Smart string
+#
+
+class _ElementUnicodeResult(str):
+    @property
+    def is_attribute(self) -> bool: ...
+    @property
+    def is_tail(self) -> bool: ...
+    @property
+    def is_text(self) -> bool: ...
+    @property
+    def attrname(self) -> Optional[str]: ...
+    def getparent(self) -> Optional[_Element]: ...
+
+# Python 2.x only
+class _ElementStringResult(bytes):
+    @property
+    def is_attribute(self) -> bool: ...
+    @property
+    def is_tail(self) -> bool: ...
+    @property
+    def is_text(self) -> bool: ...
+    @property
+    def attrname(self) -> Optional[bytes]: ...
+    def getparent(self) -> Optional[_Element]: ...
+
+#
+# Qualified Name helper
+#
+
+class QName:
+    def __init__(
+        self,
+        text_or_uri_or_element: Optional[Union[basestring, _Element]],
+        tag: Optional[basestring] = ...,
+    ) -> None: ...
+    @property
+    def localname(self) -> str: ...
+    @property
+    def namespace(self) -> Optional[str]: ...
+    @property
+    def text(self) -> str: ...
+    # Emulate __richcmp__()
+    def __ge__(self, other: Any) -> bool: ...
+    def __gt__(self, other: Any) -> bool: ...
+    def __le__(self, other: Any) -> bool: ...
+    def __lt__(self, other: Any) -> bool: ...
+
+_TagName = Union[basestring, QName]
+
+# XPath object - http://lxml.de/xpathxslt.html#xpath-return-values
+_XPathObject = Union[
+    bool,
+    float,
+    _ElementUnicodeResult,
+    str,
+    List[
+        Union[
+            "_Element",
+            _ElementUnicodeResult,
+            str,
+            Tuple[Optional[str], Optional[str]],
+        ]
+    ],
+]
+
 class ElementChildIterator(Iterator["_Element"]):
     def __iter__(self) -> "ElementChildIterator": ...
     def __next__(self) -> "_Element": ...
-
-class _ElementUnicodeResult(str):
-    is_attribute: bool
-    is_tail: bool
-    is_text: bool
-    attrname: Optional[basestring]
-    def getparent(self) -> Optional["_Element"]: ...
-
-class _ElementStringResult(bytes):
-    is_attribute: bool
-    is_tail: bool
-    is_text: bool
-    attrname: Optional[basestring]
-    def getparent(self) -> Optional["_Element"]: ...
 
 class _Element(Iterable["_Element"], Sized):
     def __delitem__(self, key: Union[int, slice]) -> None: ...
@@ -226,16 +269,6 @@ class _Attrib:
     def has_key(self, key: basestring) -> bool: ...
     def __contains__(self, key: basestring) -> bool: ...
     def __richcmp__(self, other: _Attrib, op: int) -> bool: ...
-
-class QName:
-    localname = ...  # type: str
-    namespace = ...  # type: str
-    text = ...  # type: str
-    def __init__(
-        self,
-        text_or_uri_or_element: Union[None, basestring, _Element],
-        tag: Optional[basestring] = ...,
-    ) -> None: ...
 
 class _XSLTResultTree(_ElementTree, SupportsBytes):
     def __bytes__(self) -> bytes: ...
