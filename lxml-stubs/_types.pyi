@@ -29,7 +29,9 @@ _NSMapArg = Optional[Mapping[Optional[basestring], basestring]]
 #
 _NonDefaultNSMapArg = Optional[Mapping[basestring, basestring]]
 
-_ExtensionArg = Optional[Mapping[
-    Tuple[Optional[basestring], basestring],
-    Callable[..., Any] # TODO extension function not investigated yet
-]]
+_ExtensionArg = Optional[
+    Mapping[
+        Tuple[Optional[basestring], basestring],
+        Callable[..., Any],  # TODO extension function not investigated yet
+    ]
+]

@@ -15,7 +15,7 @@ from typing_extensions import Literal
 from .._types import basestring
 from ..etree import HTMLParser as _HTMLParser
 from ..etree import XMLParser as _XMLParser
-from ..etree import _ElementUnicodeResult, _BaseParser, _Element
+from ..etree import _BaseParser, _Element, _ElementUnicodeResult
 
 def __fix_docstring(s: str) -> str: ...
 

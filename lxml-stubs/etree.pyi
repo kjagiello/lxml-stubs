@@ -4,9 +4,8 @@
 # - Some basic types are split into _types.pyi
 #
 
-import sys
 import logging
-
+import sys
 from typing import (
     IO,
     Any,
@@ -28,26 +27,16 @@ from typing import (
 )
 
 from ._types import (
-    basestring,
     _Dict_Tuple2AnyStr_Any,
     _DictAnyStr,
     _ExtensionArg,
     _ListAnyStr,
-    _NSMapArg,
     _NonDefaultNSMapArg,
+    _NSMapArg,
+    basestring,
 )
-
-from ._xmlerror import (
-    _BaseErrorLog,
-    _ErrorLog,
-    _LogEntry,
-)
-
-from ._xpath import (
-    _XPathEvaluatorBase,
-    _XPathObject,
-    _XPathVarArg,
-)
+from ._xmlerror import _BaseErrorLog, _ErrorLog, _LogEntry
+from ._xpath import _XPathEvaluatorBase, _XPathObject, _XPathVarArg
 
 if sys.version_info < (3, 8):
     from typing_extensions import Literal, Protocol
@@ -134,18 +123,14 @@ class _Element(Iterable["_Element"], Sized):
     def addnext(self, element: "_Element") -> None: ...
     def append(self, element: "_Element") -> None: ...
     def cssselect(self, expression: str) -> List[_Element]: ...
-    def find(
-        self, path: str, namespaces: _NSMapArg = ...
-    ) -> Optional["_Element"]: ...
+    def find(self, path: str, namespaces: _NSMapArg = ...) -> Optional["_Element"]: ...
     def findtext(
         self,
         path: str,
         default: Optional[str] = ...,
         namespaces: _NSMapArg = ...,
     ) -> Optional[str]: ...
-    def findall(
-        self, name: str, namespaces: _NSMapArg = ...
-    ) -> List["_Element"]: ...
+    def findall(self, name: str, namespaces: _NSMapArg = ...) -> List["_Element"]: ...
     def clear(self) -> None: ...
     @overload
     def get(self, key: _TagName) -> Optional[str]: ...
@@ -167,7 +152,7 @@ class _Element(Iterable["_Element"], Sized):
         _tag: _TagName,
         attrib: Optional[_DictAnyStr] = ...,
         nsmap: _NSMapArg = ...,
-        **_extra: Any
+        **_extra: Any,
     ) -> _Element: ...
     def remove(self, element: _Element) -> None: ...
     def set(self, key: _TagName, value: basestring) -> None: ...
@@ -231,7 +216,7 @@ class _ElementTree:
         _xslt: XSLT,
         extensions: Optional[_Dict_Tuple2AnyStr_Any] = ...,
         access_control: Optional[XSLTAccessControl] = ...,
-        **_variables: Any
+        **_variables: Any,
     ) -> _ElementTree: ...
 
 class __ContentOnlyElement(_Element): ...
@@ -246,7 +231,9 @@ class _Attrib:
     def update(
         self,
         sequence_or_dict: Union[
-            _Attrib, Mapping[basestring, basestring], Sequence[Tuple[basestring, basestring]]
+            _Attrib,
+            Mapping[basestring, basestring],
+            Sequence[Tuple[basestring, basestring]],
         ],
     ) -> None: ...
     def pop(self, key: basestring, default: basestring) -> basestring: ...
@@ -257,7 +244,9 @@ class _Attrib:
     def __getitem__(self, key: basestring) -> basestring: ...
     def __bool__(self) -> bool: ...
     def __len__(self) -> int: ...
-    def get(self, key: basestring, default: basestring = ...) -> Optional[basestring]: ...
+    def get(
+        self, key: basestring, default: basestring = ...
+    ) -> Optional[basestring]: ...
     def keys(self) -> _ListAnyStr: ...
     def __iter__(self) -> Iterator[basestring]: ...  # actually _AttribIterator
     def iterkeys(self) -> Iterator[basestring]: ...
@@ -301,7 +290,7 @@ class _BaseParser:
         _tag: basestring,
         attrib: Optional[Union[_DictAnyStr, _Attrib]] = ...,
         nsmap: _NSMapArg = ...,
-        **_extra: Any
+        **_extra: Any,
     ) -> _Element: ...
     def setElementClassLookup(
         self, lookup: Optional[ElementClassLookup] = ...
@@ -391,7 +380,7 @@ class XSLT:
         self,
         _input: Union[_Element, _ElementTree],
         profile_run: bool = ...,
-        **kwargs: Union[basestring, _XSLTQuotedStringParam]
+        **kwargs: Union[basestring, _XSLTQuotedStringParam],
     ) -> _XSLTResultTree: ...
     @staticmethod
     def strparam(s: basestring) -> _XSLTQuotedStringParam: ...
@@ -403,14 +392,14 @@ def Element(
     _tag: basestring,
     attrib: Optional[_DictAnyStr] = ...,
     nsmap: _NSMapArg = ...,
-    **extra: basestring
+    **extra: basestring,
 ) -> _Element: ...
 def SubElement(
     _parent: _Element,
     _tag: basestring,
     attrib: Optional[_DictAnyStr] = ...,
     nsmap: _NSMapArg = ...,
-    **extra: basestring
+    **extra: basestring,
 ) -> _Element: ...
 def ElementTree(
     element: _Element = ...,
@@ -439,7 +428,9 @@ def cleanup_namespaces(
     keep_ns_prefixes: Optional[Iterable[basestring]] = ...,
 ) -> None: ...
 def parse(
-    source: Union[basestring, IO[Any]], parser: XMLParser = ..., base_url: basestring = ...
+    source: Union[basestring, IO[Any]],
+    parser: XMLParser = ...,
+    base_url: basestring = ...,
 ) -> _ElementTree: ...
 def fromstring(
     text: basestring, parser: XMLParser = ..., *, base_url: basestring = ...
@@ -491,13 +482,16 @@ def tostring(
 class Error(Exception): ...
 
 class LxmlError(Error):
-    def __init__(self, message: Any, error_log: Optional[_BaseErrorLog] = ...) -> None: ...
+    def __init__(
+        self, message: Any, error_log: Optional[_BaseErrorLog] = ...
+    ) -> None: ...
     error_log: _BaseErrorLog = ...
 
 class DocumentInvalid(LxmlError): ...
 class LxmlSyntaxError(LxmlError, SyntaxError): ...
 class ParseError(LxmlSyntaxError): ...
 class XMLSyntaxError(ParseError): ...
+
 class _Validator:
     @property
     def error_log(self) -> _ErrorLog: ...
@@ -510,7 +504,9 @@ class DTD(_Validator):
 
 _ElementFactory = Callable[[Any, Dict[basestring, basestring]], _Element]
 _CommentFactory = Callable[[basestring], _Comment]
-_ProcessingInstructionFactory = Callable[[basestring, basestring], _ProcessingInstruction]
+_ProcessingInstructionFactory = Callable[
+    [basestring, basestring], _ProcessingInstruction
+]
 
 class TreeBuilder:
     def __init__(
@@ -529,7 +525,6 @@ class TreeBuilder:
     def pi(self, target: basestring, data: Optional[basestring] = ...) -> Any: ...
     def start(self, tag: basestring, attrib: Dict[basestring, basestring]) -> None: ...
 
-
 #
 # Public members of xmlerror.pxi
 #
@@ -539,7 +534,9 @@ def clear_error_log() -> None: ...
 class PyErrorLog(_BaseErrorLog):
     @property
     def level_map(self) -> Dict[int, int]: ...
-    def __init__(self, logger_name: Optional[str] = ..., logger: logging.Logger = ...) -> None: ...
+    def __init__(
+        self, logger_name: Optional[str] = ..., logger: logging.Logger = ...
+    ) -> None: ...
     # FIXME PyErrorLog.copy() is a dummy that doesn't really copy itself,
     # causing error on type checkers
     # def copy(self) -> _ListErrorLog: ...
@@ -554,16 +551,18 @@ class ErrorLevels:
     WARNING: int = ...
     ERROR: int = ...
     FATAL: int = ...
+
 # It's overkill to include zillions of constants into type checker;
 # and more no-no for updating constants along with each lxml releases
 # unless these stubs are bundled with lxml together
 class ErrorDomains:
     def __getattr__(self, name: str) -> int: ...
+
 class ErrorTypes:
     def __getattr__(self, name: str) -> int: ...
+
 class RelaxNGErrorTypes:
     def __getattr__(self, name: str) -> int: ...
-
 
 #
 # Public members of xpath.pxi
@@ -571,7 +570,6 @@ class RelaxNGErrorTypes:
 
 # TODO Belongs to extensions.pxi, to be moved
 class XPathError(LxmlError): ...
-
 class XPathSyntaxError(LxmlSyntaxError, XPathError): ...
 
 class XPathElementEvaluator(_XPathEvaluatorBase):
@@ -617,7 +615,6 @@ def XPathEvaluator(
     regexp: bool = ...,
     smart_strings: bool = ...,
 ) -> XPathElementEvaluator: ...
-
 @overload
 def XPathEvaluator(
     etree_or_element: _ElementTree,
@@ -653,5 +650,5 @@ class ETXPath(XPath):
         *,
         extensions: _ExtensionArg = ...,
         regexp: bool = ...,
-        smart_strings: bool = ...
+        smart_strings: bool = ...,
     ) -> None: ...

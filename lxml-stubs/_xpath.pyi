@@ -2,18 +2,13 @@
 # Internal classes and functions from lxml/xpath.pxi
 #
 
-from typing import (
-    List,
-    Optional,
-    Tuple, TypeVar,
-    Union,
-)
+from typing import List, Optional, Tuple, TypeVar, Union
 
 from ._types import basestring
 from ._xmlerror import _ErrorLog
-from .etree import _ElementUnicodeResult, _Element
+from .etree import _Element, _ElementUnicodeResult
 
-_ET = TypeVar('_ET', bound=_Element)
+_ET = TypeVar("_ET", bound=_Element)
 
 # XPath object - http://lxml.de/xpathxslt.html#xpath-return-values
 # TODO Generic alias to parameterize returned element type
@@ -28,12 +23,14 @@ _XPathObject = Union[
     float,
     _ElementUnicodeResult,
     str,
-    List[Union[
-        _ET,
-        _ElementUnicodeResult,
-        str,
-        Tuple[Optional[str], Optional[str]],
-    ]],
+    List[
+        Union[
+            _ET,
+            _ElementUnicodeResult,
+            str,
+            Tuple[Optional[str], Optional[str]],
+        ]
+    ],
 ]
 
 # XPath() accepts most types from XPathObject as input variables
@@ -43,10 +40,12 @@ _XPathVarArg = Union[
     bool,
     int,
     float,
-    List[Union[
-        _Element,
-        basestring,
-    ]],
+    List[
+        Union[
+            _Element,
+            basestring,
+        ]
+    ],
 ]
 
 class _XPathEvaluatorBase:

@@ -1,6 +1,6 @@
 from typing import Any, Callable, Mapping, Optional, Type, TypeVar
 
-from ._types import basestring, _NSMapArg
+from ._types import _NSMapArg, basestring
 from .etree import _Element
 
 _T = TypeVar("_T")

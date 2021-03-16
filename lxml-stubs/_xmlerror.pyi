@@ -4,15 +4,9 @@
 # Though intended as an include file for etree.pyx, most classes
 # and funcs are independent enough to be implemented here
 
-from typing import (
-    Iterator,
-    Optional,
-    Tuple,
-    TypeVar,
-    Union,
-)
+from typing import Iterator, Optional, Tuple, TypeVar, Union
 
-_T = TypeVar('_T')
+_T = TypeVar("_T")
 
 class _LogEntry:
     @property
@@ -37,7 +31,6 @@ class _LogEntry:
     def filename(self) -> Optional[str]: ...
     @property
     def path(self) -> str: ...
-
 
 class _BaseErrorLog:
     @property
