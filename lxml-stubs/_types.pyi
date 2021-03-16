@@ -1,5 +1,5 @@
 import sys
-from typing import Any, Dict, List, Mapping, Optional, Tuple, Union
+from typing import Any, Callable, Dict, List, Mapping, Optional, Tuple, Union
 
 # typing.AnyStr WILL be used in multiple places like string replace
 # or attribute handling, where input and output ARE related.
@@ -28,3 +28,8 @@ _NSMapArg = Optional[Mapping[Optional[basestring], basestring]]
 # https://lxml.de/xpathxslt.html#namespaces-and-prefixes
 #
 _NonDefaultNSMapArg = Optional[Mapping[basestring, basestring]]
+
+_ExtensionArg = Optional[Mapping[
+    Tuple[Optional[basestring], basestring],
+    Callable[..., Any] # TODO extension function not investigated yet
+]]

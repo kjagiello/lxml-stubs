@@ -31,6 +31,7 @@ from ._types import (
     basestring,
     _Dict_Tuple2AnyStr_Any,
     _DictAnyStr,
+    _ExtensionArg,
     _ListAnyStr,
     _NSMapArg,
     _NonDefaultNSMapArg,
@@ -40,6 +41,12 @@ from ._xmlerror import (
     _BaseErrorLog,
     _ErrorLog,
     _LogEntry,
+)
+
+from ._xpath import (
+    _XPathEvaluatorBase,
+    _XPathObject,
+    _XPathVarArg,
 )
 
 if sys.version_info < (3, 8):
@@ -115,22 +122,6 @@ class QName:
 
 _TagName = Union[basestring, QName]
 
-# XPath object - http://lxml.de/xpathxslt.html#xpath-return-values
-_XPathObject = Union[
-    bool,
-    float,
-    _ElementUnicodeResult,
-    str,
-    List[
-        Union[
-            "_Element",
-            _ElementUnicodeResult,
-            str,
-            Tuple[Optional[str], Optional[str]],
-        ]
-    ],
-]
-
 class ElementChildIterator(Iterator["_Element"]):
     def __iter__(self) -> "ElementChildIterator": ...
     def __next__(self) -> "_Element": ...
@@ -186,8 +177,8 @@ class _Element(Iterable["_Element"], Sized):
         namespaces: _NonDefaultNSMapArg = ...,
         extensions: Any = ...,
         smart_strings: bool = ...,
-        **_variables: _XPathObject
-    ) -> _XPathObject: ...
+        **_variables: _XPathVarArg,
+    ) -> _XPathObject[_Element]: ...
     attrib = ...  # type: _Attrib
     text = ...  # type: Optional[basestring]
     tag = ...  # type: str
@@ -233,8 +224,8 @@ class _ElementTree:
         namespaces: _NonDefaultNSMapArg = ...,
         extensions: Any = ...,
         smart_strings: bool = ...,
-        **_variables: _XPathObject
-    ) -> _XPathObject: ...
+        **_variables: _XPathVarArg,
+    ) -> _XPathObject[_Element]: ...
     def xslt(
         self,
         _xslt: XSLT,
@@ -517,25 +508,6 @@ class DTD(_Validator):
     ) -> None: ...
     def assertValid(self, etree: _Element) -> None: ...
 
-class XPath:
-    def __init__(
-        self,
-        path: basestring,
-        *,
-        namespaces: _NonDefaultNSMapArg = ...,
-        extensions: Optional[basestring] = ...,
-        regexp: bool = ...,
-        smart_strings: bool = ...
-    ) -> None: ...
-    def __call__(
-        self,
-        _etree_or_element: Union[_Element, _ElementTree],
-        **_variables: _XPathObject
-    ) -> _XPathObject: ...
-    # TODO to be removed when start working on XPath inheritance
-    @property
-    def error_log(self) -> _ErrorLog: ...
-
 _ElementFactory = Callable[[Any, Dict[basestring, basestring]], _Element]
 _CommentFactory = Callable[[basestring], _Comment]
 _ProcessingInstructionFactory = Callable[[basestring, basestring], _ProcessingInstruction]
@@ -591,3 +563,95 @@ class ErrorTypes:
     def __getattr__(self, name: str) -> int: ...
 class RelaxNGErrorTypes:
     def __getattr__(self, name: str) -> int: ...
+
+
+#
+# Public members of xpath.pxi
+#
+
+# TODO Belongs to extensions.pxi, to be moved
+class XPathError(LxmlError): ...
+
+class XPathSyntaxError(LxmlSyntaxError, XPathError): ...
+
+class XPathElementEvaluator(_XPathEvaluatorBase):
+    def __init__(
+        self,
+        element: _Element,
+        *,
+        namespaces: _NonDefaultNSMapArg = ...,
+        extensions: _ExtensionArg = ...,
+        regexp: bool = ...,
+        smart_strings: bool = ...,
+    ) -> None: ...
+    def register_namespace(self, prefix: basestring, uri: basestring) -> None: ...
+    def register_namespaces(self, prefix: basestring, uri: basestring) -> None: ...
+    def __call__(
+        self,
+        path: basestring,
+        **_variables: _XPathVarArg,
+    ) -> _XPathObject[_Element]: ...
+
+class XPathDocumentEvaluator(_XPathEvaluatorBase):
+    def __init__(
+        self,
+        etree: _ElementTree,
+        *,
+        namespaces: _NonDefaultNSMapArg = ...,
+        extensions: _ExtensionArg = ...,
+        regexp: bool = ...,
+        smart_strings: bool = ...,
+    ) -> None: ...
+    def __call__(
+        self,
+        path: basestring,
+        **_variables: _XPathVarArg,
+    ) -> _XPathObject[_Element]: ...
+
+@overload
+def XPathEvaluator(
+    etree_or_element: _Element,
+    *,
+    namespaces: _NonDefaultNSMapArg = ...,
+    extensions: _ExtensionArg = ...,
+    regexp: bool = ...,
+    smart_strings: bool = ...,
+) -> XPathElementEvaluator: ...
+
+@overload
+def XPathEvaluator(
+    etree_or_element: _ElementTree,
+    *,
+    namespaces: _NonDefaultNSMapArg = ...,
+    extensions: _ExtensionArg = ...,
+    regexp: bool = ...,
+    smart_strings: bool = ...,
+) -> XPathDocumentEvaluator: ...
+
+class XPath(_XPathEvaluatorBase):
+    def __init__(
+        self,
+        path: basestring,
+        *,
+        namespaces: _NonDefaultNSMapArg = ...,
+        extensions: _ExtensionArg = ...,
+        regexp: bool = ...,
+        smart_strings: bool = ...,
+    ) -> None: ...
+    def __call__(
+        self,
+        _etree_or_element: Union[_Element, _ElementTree],
+        **_variables: _XPathVarArg,
+    ) -> _XPathObject[_Element]: ...
+    @property
+    def path(self) -> str: ...
+
+class ETXPath(XPath):
+    def __init__(
+        self,
+        path: basestring,
+        *,
+        extensions: _ExtensionArg = ...,
+        regexp: bool = ...,
+        smart_strings: bool = ...
+    ) -> None: ...
