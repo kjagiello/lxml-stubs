@@ -1,0 +1,73 @@
+-   case: xpath_create_selector
+    disable_cache: true
+    main: |
+        from lxml import etree
+        xpath = etree.XPath("//text()")
+        reveal_type(xpath)  # N: Revealed type is 'lxml.etree.XPath'
+
+-   case: xpath_create_evaluator_for_element
+    disable_cache: true
+    main: |
+        from lxml import etree
+        root = etree.XML("<root><a>TEXT</a></root>")
+        f = open("myfile.txt", "r")
+        doc = etree.parse(f)
+        evaluator = etree.XPathElementEvaluator(root)
+        reveal_type(evaluator)
+        evaluator = etree.XPathElementEvaluator(doc)
+        reveal_type(evaluator)
+    out: |
+        main:6: note: Revealed type is 'lxml.etree.XPathElementEvaluator'
+        main:7: error: Argument 1 to "XPathElementEvaluator" has incompatible type "_ElementTree"; expected "_Element"
+        main:8: note: Revealed type is 'lxml.etree.XPathElementEvaluator'
+
+-   case: xpath_create_evaluator_for_document
+    disable_cache: true
+    main: |
+        from lxml import etree
+        root = etree.XML("<root><a>TEXT</a></root>")
+        f = open("myfile.txt", "r")
+        doc = etree.parse(f)
+        evaluator = etree.XPathDocumentEvaluator(root)
+        reveal_type(evaluator)
+        evaluator = etree.XPathDocumentEvaluator(doc)
+        reveal_type(evaluator)
+    out: |
+        main:5: error: Argument 1 to "XPathDocumentEvaluator" has incompatible type "_Element"; expected "_ElementTree"
+        main:6: note: Revealed type is 'lxml.etree.XPathDocumentEvaluator'
+        main:8: note: Revealed type is 'lxml.etree.XPathDocumentEvaluator'
+
+-   case: xpath_create_evaluator_autodetect
+    disable_cache: true
+    parametrized:
+        -   arg: root
+            rt: lxml.etree.XPathElementEvaluator
+        -   arg: doc
+            rt: lxml.etree.XPathDocumentEvaluator
+    main: |
+        from lxml import etree
+        root = etree.XML("<root><a>TEXT</a></root>")
+        f = open("myfile.txt", "r")
+        doc = etree.parse(f)
+        evaluator = etree.XPathEvaluator({{ arg }})
+        reveal_type(evaluator)  # N: Revealed type is '{{ rt }}'
+
+-   case: xpath_create_evaluator_bad_type
+    disable_cache: true
+    main: |
+        from lxml import etree
+        evaluator = etree.XPathEvaluator('fail_here')
+    out: |
+        main:2: error: No overload variant of "XPathEvaluator" matches argument type "str"
+        main:2: note: Possible overload variants:
+        main:2: note:     def XPathEvaluator(etree_or_element: _Element, *, namespaces: Optional[Mapping[Union[str, bytes], Union[str, bytes]]] = ..., extensions: Optional[Mapping[Tuple[Union[str, bytes, None], Union[str, bytes]], Callable[..., Any]]] = ..., regexp: bool = ..., smart_strings: bool = ...) -> XPathElementEvaluator
+        main:2: note:     def XPathEvaluator(etree_or_element: _ElementTree, *, namespaces: Optional[Mapping[Union[str, bytes], Union[str, bytes]]] = ..., extensions: Optional[Mapping[Tuple[Union[str, bytes, None], Union[str, bytes]], Callable[..., Any]]] = ..., regexp: bool = ..., smart_strings: bool = ...) -> XPathDocumentEvaluator
+
+-   case: xpath_evaluation_result
+    disable_cache: true
+    main: |
+        from lxml import etree
+        document = etree.XML("<root><a>TEXT</a></root>")
+        xpath = etree.XPath("//text()")
+        result = xpath(document)
+        reveal_type(result)  # N: Revealed type is 'Union[builtins.bool, builtins.float, lxml.etree._ElementUnicodeResult, builtins.str, builtins.list[Union[lxml.etree._Element, lxml.etree._ElementUnicodeResult, builtins.str, Tuple[Union[builtins.str, None], Union[builtins.str, None]]]]]'
