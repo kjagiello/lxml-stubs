@@ -35,6 +35,7 @@ from ._types import (
     _NSMapArg,
     basestring,
 )
+from .cssselect import _CSSTransArg
 from ._xmlerror import _BaseErrorLog, _ErrorLog, _LogEntry
 from ._xpath import _XPathEvaluatorBase, _XPathObject, _XPathVarArg
 
@@ -122,7 +123,12 @@ class _Element(Iterable["_Element"], Sized):
     def addprevious(self, element: "_Element") -> None: ...
     def addnext(self, element: "_Element") -> None: ...
     def append(self, element: "_Element") -> None: ...
-    def cssselect(self, expression: str) -> List[_Element]: ...
+    def cssselect(
+        self,
+        expression: str,
+        *,
+        translator: _CSSTransArg = ...,
+    ) -> List[_Element]: ... # Hopefully correct as pseudo elem is unsupported
     def find(self, path: str, namespaces: _NSMapArg = ...) -> Optional["_Element"]: ...
     def findtext(
         self,
