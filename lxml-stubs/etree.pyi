@@ -1,7 +1,9 @@
 #
 # A few thing worth noting:
 # - Read-only cython attributes are emulated with read-only properties
-# - Some basic types are split into _types.pyi
+# - Some basic types split into _types.pyi and shared among other files
+# - Some inclusion files split into its own for easier management:
+#   xmlerror, xpath
 #
 
 import logging
@@ -27,6 +29,7 @@ from typing import (
 )
 
 from ._types import (
+    SupportsItems,
     _Dict_Tuple2AnyStr_Any,
     _DictAnyStr,
     _ExtensionArg,
@@ -35,9 +38,9 @@ from ._types import (
     _NSMapArg,
     basestring,
 )
-from .cssselect import _CSSTransArg
 from ._xmlerror import _BaseErrorLog, _ErrorLog, _LogEntry
 from ._xpath import _XPathEvaluatorBase, _XPathObject, _XPathVarArg
+from .cssselect import _CSSTransArg
 
 if sys.version_info < (3, 8):
     from typing_extensions import Literal, Protocol
@@ -111,57 +114,198 @@ class QName:
     def __lt__(self, other: Any) -> bool: ...
 
 _TagName = Union[basestring, QName]
+_TagValue = Union[basestring, QName]  # FIXME Also accepts CDATA
+# FIXME Tag filter is quite an oddball that it requires not the
+# element classes, but the element factory *functions* themselves
+# as value. Probably not typable.
+_TagFilter = Union[
+    Callable[..., _Element],
+    _Element,
+    QName,
+    str,
+]
 
-class ElementChildIterator(Iterator["_Element"]):
-    def __iter__(self) -> "ElementChildIterator": ...
-    def __next__(self) -> "_Element": ...
+# The base of _Element is *almost* an amalgam of MutableSequence[_Element]
+# and mixin methods of Mapping[_Attrib], only missing bits here and there.
+# Following the order of _Element methods code listing as much as possible
+# for easier management.
+class _Element(Iterable[_Element], Sized):
 
-class _Element(Iterable["_Element"], Sized):
-    def __delitem__(self, key: Union[int, slice]) -> None: ...
-    def __getitem__(self, item: int) -> _Element: ...
+    # Accessors
+    @overload
+    def __setitem__(self, x: int, value: _Element) -> None: ...
+    @overload
+    def __setitem__(self, x: slice, value: Iterable[_Element]) -> None: ...
+    @overload
+    def __delitem__(self, x: int) -> None: ...
+    @overload
+    def __delitem__(self, x: slice) -> None: ...
+    def set(self, key: _TagName, value: _TagName) -> None: ...
+    def append(self, element: _Element) -> None: ...
+    def addnext(self, element: _Element) -> None: ...
+    def addprevious(self, element: _Element) -> None: ...
+    def extend(self, elements: Iterable[_Element]) -> None: ...
+    def clear(self, keep_tail: bool = ...) -> None: ...
+    def insert(self, index: int, element: _Element) -> None: ...
+    def remove(self, element: _Element) -> None: ...
+    def replace(self, old_element: _Element, new_element: _Element) -> None: ...
+    # Common properties
+    @property
+    def tag(self) -> str: ...
+    @tag.setter
+    def tag(self, value: _TagValue) -> None: ...
+    @property
+    def attrib(self) -> _Attrib: ...
+    @property
+    def text(self) -> Optional[str]: ...
+    @text.setter
+    def text(self, value: _TagValue) -> None: ...
+    @property
+    def tail(self) -> Optional[str]: ...
+    @tail.setter
+    def tail(self, value: Optional[basestring]) -> None: ...  # FIXME missing CDATA
+    # _Element-only properties
+    @property
+    def prefix(self) -> Optional[str]: ...
+    @property
+    def sourceline(self) -> Optional[int]: ...
+    @sourceline.setter
+    def sourceline(self, value: int) -> None: ...
+    @property
+    def nsmap(self) -> Dict[Optional[str], str]: ...
+    @property
+    def base(self) -> Optional[str]: ...
+    @base.setter
+    def base(self, value: Optional[basestring]) -> None: ...
+    # Accessors
+    @overload
+    def __getitem__(self, x: int) -> _Element: ...
+    @overload
+    def __getitem__(self, x: slice) -> List[_Element]: ...
     def __len__(self) -> int: ...
-    def addprevious(self, element: "_Element") -> None: ...
-    def addnext(self, element: "_Element") -> None: ...
-    def append(self, element: "_Element") -> None: ...
-    def cssselect(
-        self,
-        expression: str,
-        *,
-        translator: _CSSTransArg = ...,
-    ) -> List[_Element]: ... # Hopefully correct as pseudo elem is unsupported
-    def find(self, path: str, namespaces: _NSMapArg = ...) -> Optional["_Element"]: ...
-    def findtext(
-        self,
-        path: str,
-        default: Optional[str] = ...,
-        namespaces: _NSMapArg = ...,
-    ) -> Optional[str]: ...
-    def findall(self, name: str, namespaces: _NSMapArg = ...) -> List["_Element"]: ...
-    def clear(self) -> None: ...
+    def __nonzero__(self) -> bool: ...
+    def __contains__(self, element: _Element) -> bool: ...
+    # There are a hoard of different iterators used in lxml, with different
+    # init arguments and different set of elements, but they all have one
+    # thing in common: as iterator of elements. May as well just use most
+    # generic type until specific need arises,
+    def __iter__(self) -> Iterator[_Element]: ...
+    def __reversed__(self) -> Iterator[_Element]: ...
+    def index(
+        self, child: _Element, start: Optional[int] = ..., end: Optional[int] = ...
+    ) -> int: ...
     @overload
     def get(self, key: _TagName) -> Optional[str]: ...
     @overload
     def get(self, key: _TagName, default: _T) -> Union[str, _T]: ...
-    def getnext(self) -> Optional[_Element]: ...
+    def keys(self) -> List[str]: ...
+    def values(self) -> List[str]: ...
+    def items(self) -> List[Tuple[str, str]]: ...
     def getparent(self) -> Optional[_Element]: ...
+    def getnext(self) -> Optional[_Element]: ...
     def getprevious(self) -> Optional[_Element]: ...
-    def getroottree(self) -> _ElementTree: ...
-    def insert(self, index: int, element: _Element) -> None: ...
-    def iter(
-        self, tag: Optional[_TagName] = ..., *tags: _TagName
-    ) -> Iterable[_Element]: ...
+    @overload
+    def itersiblings(
+        self,
+        tag: Optional[Sequence[_TagFilter]] = ...,
+        preceding: bool = ...,
+    ) -> Iterator[_Element]: ...
+    @overload
+    def itersiblings(
+        self,
+        tag: _TagFilter,
+        *tags: _TagFilter,
+        preceding: bool = ...,
+    ) -> Iterator[_Element]: ...
+    @overload
+    def iterancestors(
+        self,
+        tag: Optional[Sequence[_TagFilter]] = ...,
+    ) -> Iterator[_Element]: ...
+    @overload
+    def iterancestors(
+        self,
+        tag: _TagFilter,
+        *tags: _TagFilter,
+    ) -> Iterator[_Element]: ...
+    @overload
+    def iterdescendants(
+        self,
+        tag: Optional[Sequence[_TagFilter]] = ...,
+    ) -> Iterator[_Element]: ...
+    @overload
+    def iterdescendants(
+        self,
+        tag: _TagFilter,
+        *tags: _TagFilter,
+    ) -> Iterator[_Element]: ...
+    @overload
     def iterchildren(
-        self, tag: Optional[_TagName] = ..., reversed: bool = ..., *tags: _TagName
-    ) -> Iterable[_Element]: ...
+        self,
+        tag: Optional[Sequence[_TagFilter]] = ...,
+        reversed: bool = ...,
+    ) -> Iterator[_Element]: ...
+    @overload
+    def iterchildren(
+        self,
+        tag: _TagFilter,
+        *tags: _TagFilter,
+        reversed: bool = ...,
+    ) -> Iterator[_Element]: ...
+    @overload
+    def iter(
+        self,
+        tag: Optional[Sequence[_TagFilter]] = ...,
+    ) -> Iterator[_Element]: ...
+    @overload
+    def iter(
+        self,
+        tag: _TagFilter,
+        *tags: _TagFilter,
+    ) -> Iterator[_Element]: ...
+    @overload
+    def itertext(
+        self,
+        tag: Optional[Sequence[_TagFilter]] = ...,
+        with_tail: bool = ...,
+    ) -> Iterator[str]: ...
+    @overload
+    def itertext(
+        self,
+        tag: _TagFilter,
+        *tags: _TagFilter,
+        with_tail: bool = ...,
+    ) -> Iterator[str]: ...
+    def getroottree(self) -> _ElementTree: ...
     def makeelement(
         self,
         _tag: _TagName,
-        attrib: Optional[_DictAnyStr] = ...,
+        # Final result is sort of like {**attrib, **_extra}
+        attrib: Optional[SupportsItems[basestring, basestring]] = ...,
         nsmap: _NSMapArg = ...,
-        **_extra: Any,
+        **_extra: basestring,
     ) -> _Element: ...
-    def remove(self, element: _Element) -> None: ...
-    def set(self, key: _TagName, value: basestring) -> None: ...
+    # XXX Note that the path str in find() and friends are NOT processed,
+    # so feeding bytes would fail on py3
+    def find(
+        self, path: Union[str, QName], namespaces: _NSMapArg = ...
+    ) -> Optional[_Element]: ...
+    def findtext(
+        self,
+        path: Union[str, QName],
+        default: Optional[str] = ...,
+        namespaces: _NSMapArg = ...,
+    ) -> Optional[str]: ...
+    def findall(
+        self,
+        name: str,
+        namespaces: _NSMapArg = ...,
+    ) -> List[_Element]: ...
+    def iterfind(
+        self,
+        path: Union[str, QName],
+        namespaces: _NSMapArg = ...,
+    ) -> Iterator[_Element]: ...
     def xpath(
         self,
         _path: basestring,
@@ -170,16 +314,25 @@ class _Element(Iterable["_Element"], Sized):
         smart_strings: bool = ...,
         **_variables: _XPathVarArg,
     ) -> _XPathObject[_Element]: ...
-    attrib = ...  # type: _Attrib
-    text = ...  # type: Optional[basestring]
-    tag = ...  # type: str
-    tail = ...  # type: Optional[basestring]
-    nsmap: Dict[Optional[str], str] = ...
-    def __iter__(self) -> ElementChildIterator: ...
-    def items(self) -> Sequence[Tuple[basestring, basestring]]: ...
-    def iterfind(
-        self, path: str, namespaces: _NSMapArg = ...
-    ) -> Iterator["_Element"]: ...
+    def cssselect(
+        self,
+        expression: str,
+        *,
+        translator: _CSSTransArg = ...,
+    ) -> List[_Element]: ...  # See CSSSelector class
+    # Following methods marked as deprecated upstream
+    def getchildren(self) -> List[_Element]: ...  # = list(self)
+    @overload
+    def getiterator(  # = self.iter()
+        self,
+        tag: Optional[Sequence[_TagFilter]] = ...,
+    ) -> Iterator[_Element]: ...
+    @overload
+    def getiterator(
+        self,
+        tag: _TagFilter,
+        *tags: _TagFilter,
+    ) -> Iterator[_Element]: ...
 
 class ElementBase(_Element): ...
 

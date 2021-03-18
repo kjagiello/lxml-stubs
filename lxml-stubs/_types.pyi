@@ -1,13 +1,40 @@
 import sys
-from typing import Any, Callable, Dict, List, Mapping, Optional, Tuple, Union
+from typing import (
+    AbstractSet,
+    Any,
+    Callable,
+    Dict,
+    List,
+    Mapping,
+    Optional,
+    Tuple,
+    TypeVar,
+    Union,
+)
+
+_KT_co = TypeVar("_KT_co", covariant=True)
+_VT_co = TypeVar("_VT_co", covariant=True)
+
+if sys.version_info < (3, 8):
+    from typing_extensions import Protocol
+else:
+    from typing import Protocol
 
 # typing.AnyStr WILL be used in multiple places like string replace
 # or attribute handling, where input and output ARE related.
 # Previous naming of _AnyStr would be recipe for hard to discover
-# typo. Borrow basestring name from Python2 here.
+# typo. Borrow basestring from py2 here, as there is no intention
+# to support py2 in this stub repo.
 
 if sys.version_info > (3,):
     basestring = Union[str, bytes]
+
+#
+# Virtual protocols that does not exist beyond type checking
+#
+
+class SupportsItems(Protocol[_KT_co, _VT_co]):
+    def items(self) -> AbstractSet[Tuple[_KT_co, _VT_co]]: ...
 
 _ListAnyStr = Union[List[str], List[bytes]]
 _DictAnyStr = Union[Dict[str, str], Dict[bytes, bytes]]
