@@ -440,21 +440,19 @@ class CDATA:
 _ElemFactory = Callable[..., _ET]
 
 def Comment(text: Optional[basestring] = ...) -> _Comment: ...
-
 def Element(
     _tag: basestring,
     attrib: Optional[_DictAnyStr] = ...,
     nsmap: _NSMapArg = ...,
     **extra: basestring,
 ) -> _Element: ...
-
 def ProcessingInstruction(
     target: basestring, text: Optional[basestring] = ...
 ) -> _ProcessingInstruction: ...
+
 PI = ProcessingInstruction
 
 def Entity(name: basestring) -> _Entity: ...
-
 
 class _Attrib:
     def __setitem__(self, key: basestring, value: basestring) -> None: ...
@@ -630,7 +628,6 @@ def ElementTree(
     file: Union[basestring, IO[Any]] = ...,
     parser: XMLParser = ...,
 ) -> _ElementTree: ...
-
 def HTML(
     text: basestring,
     parser: Optional[HTMLParser] = ...,

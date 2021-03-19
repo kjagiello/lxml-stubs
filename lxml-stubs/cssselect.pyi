@@ -1,16 +1,16 @@
 import sys
 from typing import List, Union
-from .etree import _Element, _ElementTree, XPath
+
 from ._types import _NonDefaultNSMapArg
 from ._xpath import _XPathVarArg
+from .etree import XPath, _Element, _ElementTree
 
 if sys.version_info < (3, 8):
     from typing_extensions import Literal
 else:
     from typing import Literal
 
-
-_CSSTransArg = Union[LxmlTranslator, Literal['xml', 'html', 'xhtml']]
+_CSSTransArg = Union[LxmlTranslator, Literal["xml", "html", "xhtml"]]
 
 # cssselect has no stub in typeshed or official repo as of March 2021
 # include minimum stuff to make this file self-contained for now
