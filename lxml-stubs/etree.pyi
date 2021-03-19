@@ -65,6 +65,24 @@ _KnownEncodings = Literal[
     "us-ascii",
 ]
 
+# For some tags / attribute keys / attribute values below
+#
+# XXX Note that the path argument in ElementPath methods are
+# unprocessed, so feeding bytes would fail on py3
+_TextArg = Union[basestring, QName]
+_ElemPathArg = Union[str, QName]
+#
+# FIXME Tag filter is quite an oddball that it requires not the
+# element classes, but the element factory *functions* themselves
+# as value. Probably not typable.
+#
+_TagFilter = Union[
+    _ElemFactory[_Element],
+    _Element,
+    QName,
+    basestring,
+]
+
 #
 # Smart string
 #
@@ -99,7 +117,7 @@ class _ElementStringResult(bytes):
 class QName:
     def __init__(
         self,
-        text_or_uri_or_element: Optional[Union[basestring, _Element]],
+        text_or_uri_or_element: Optional[Union[_TextArg, _Element]],
         tag: Optional[basestring] = ...,
     ) -> None: ...
     @property
@@ -113,18 +131,6 @@ class QName:
     def __gt__(self, other: Any) -> bool: ...
     def __le__(self, other: Any) -> bool: ...
     def __lt__(self, other: Any) -> bool: ...
-
-_TagName = Union[basestring, QName]
-_TagValue = Union[basestring, QName, CDATA]
-# FIXME Tag filter is quite an oddball that it requires not the
-# element classes, but the element factory *functions* themselves
-# as value. Probably not typable.
-_TagFilter = Union[
-    _ElemFactory[_Element],
-    _Element,
-    QName,
-    basestring,
-]
 
 # The base of _Element is *almost* an amalgam of MutableSequence[_Element]
 # and mixin methods of Mapping[_Attrib], only missing bits here and there.
@@ -142,7 +148,7 @@ class _Element(Iterable[_Element], Sized):
     def __delitem__(self, x: int) -> None: ...
     @overload
     def __delitem__(self, x: slice) -> None: ...
-    def set(self, key: _TagName, value: _TagName) -> None: ...
+    def set(self, key: _TextArg, value: _TextArg) -> None: ...
     def append(self, element: _Element) -> None: ...
     def addnext(self, element: _Element) -> None: ...
     def addprevious(self, element: _Element) -> None: ...
@@ -161,17 +167,17 @@ class _Element(Iterable[_Element], Sized):
     @property
     def tag(self) -> str: ...
     @tag.setter
-    def tag(self, value: _TagValue) -> None: ...  # type: ignore
+    def tag(self, value: _TextArg) -> None: ...  # type: ignore
     @property
     def attrib(self) -> _Attrib: ...
     @property
     def text(self) -> Optional[str]: ...
     @text.setter
-    def text(self, value: Optional[_TagValue]) -> None: ...  # type: ignore
+    def text(self, value: Optional[Union[_TextArg, CDATA]]) -> None: ...  # type: ignore
     @property
     def tail(self) -> Optional[str]: ...
     @tail.setter
-    def tail(self, value: Optional[_TagValue]) -> None: ...  # type: ignore
+    def tail(self, value: Optional[Union[_TextArg, CDATA]]) -> None: ...  # type: ignore
     #
     # _Element-only properties
     #
@@ -212,9 +218,9 @@ class _Element(Iterable[_Element], Sized):
         self, child: _Element, start: Optional[int] = ..., end: Optional[int] = ...
     ) -> int: ...
     @overload
-    def get(self, key: _TagName) -> Optional[str]: ...
+    def get(self, key: _TextArg) -> Optional[str]: ...
     @overload
-    def get(self, key: _TagName, default: _T) -> Union[str, _T]: ...
+    def get(self, key: _TextArg, default: _T) -> Union[str, _T]: ...
     def keys(self) -> List[str]: ...
     def values(self) -> List[str]: ...
     def items(self) -> List[Tuple[str, str]]: ...
@@ -299,31 +305,29 @@ class _Element(Iterable[_Element], Sized):
     def getroottree(self) -> _ElementTree: ...
     def makeelement(
         self,
-        _tag: _TagName,
+        _tag: _TextArg,
         # Final result is sort of like {**attrib, **_extra}
         attrib: Optional[SupportsItems[basestring, basestring]] = ...,
         nsmap: _NSMapArg = ...,
         **_extra: basestring,
     ) -> _Element: ...
-    # XXX Note that the path str in find() and friends are NOT processed,
-    # so feeding bytes would fail on py3
     def find(
-        self, path: Union[str, QName], namespaces: _NSMapArg = ...
+        self, path: _ElemPathArg, namespaces: _NSMapArg = ...
     ) -> Optional[_Element]: ...
     def findtext(
         self,
-        path: Union[str, QName],
-        default: Optional[str] = ...,
+        path: _ElemPathArg,
+        default: _T = ...,
         namespaces: _NSMapArg = ...,
-    ) -> Optional[str]: ...
+    ) -> Union[str, _T]: ...
     def findall(
         self,
-        name: str,
+        path: _ElemPathArg,
         namespaces: _NSMapArg = ...,
     ) -> List[_Element]: ...
     def iterfind(
         self,
-        path: Union[str, QName],
+        path: _ElemPathArg,
         namespaces: _NSMapArg = ...,
     ) -> Iterator[_Element]: ...
     def xpath(
