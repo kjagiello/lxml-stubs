@@ -152,21 +152,32 @@ class _Element(Iterable[_Element], Sized):
     def replace(self, old_element: _Element, new_element: _Element) -> None: ...
     #
     # Common properties
+    #
+    # Most writable properties accept some incompatible types as
+    # input argument, and they are canonicalized under the hook.
+    # But both mypy and pyright aren't happy about this.
+    #
     @property
     def tag(self) -> str: ...
     @tag.setter
-    def tag(self, value: _TagValue) -> None: ...
+    def tag(self, value: _TagValue) -> None: ...  # type: ignore
     @property
     def attrib(self) -> _Attrib: ...
     @property
     def text(self) -> Optional[str]: ...
     @text.setter
-    def text(self, value: _TagValue) -> None: ...
+    def text(self, value: Optional[_TagValue]) -> None: ...  # type: ignore
     @property
     def tail(self) -> Optional[str]: ...
     @tail.setter
-    def tail(self, value: Optional[basestring]) -> None: ...  # FIXME missing CDATA
+    def tail(self, value: Optional[_TagValue]) -> None: ...  # type: ignore
+    #
     # _Element-only properties
+    #
+    # Following props are marked as read-only in comment,
+    # but 'sourceline' and 'base' provide __set__ method
+    # --- and they do work.
+    #
     @property
     def prefix(self) -> Optional[str]: ...
     @property
@@ -178,7 +189,8 @@ class _Element(Iterable[_Element], Sized):
     @property
     def base(self) -> Optional[str]: ...
     @base.setter
-    def base(self, value: Optional[basestring]) -> None: ...
+    def base(self, value: Optional[basestring]) -> None: ...  # type: ignore
+    #
     # Accessors
     #
     @overload
@@ -186,9 +198,10 @@ class _Element(Iterable[_Element], Sized):
     @overload
     def __getitem__(self, x: slice) -> List[_Element]: ...
     def __len__(self) -> int: ...
-    def __nonzero__(self) -> bool: ...
+    # For Python 2
+    # def __nonzero__(self) -> bool: ...
     def __contains__(self, element: _Element) -> bool: ...
-    # There are a hoard of different iterators used in lxml, with different
+    # There are a hoard of element iterators used in lxml, with different
     # init arguments and different set of elements, but they all have one
     # thing in common: as iterator of elements. May as well just use most
     # generic type until specific need arises,
