@@ -130,8 +130,9 @@ _TagFilter = Union[
 # Following the order of _Element methods code listing as much as possible
 # for easier management.
 class _Element(Iterable[_Element], Sized):
-
+    #
     # Accessors
+    #
     @overload
     def __setitem__(self, x: int, value: _Element) -> None: ...
     @overload
@@ -149,6 +150,7 @@ class _Element(Iterable[_Element], Sized):
     def insert(self, index: int, element: _Element) -> None: ...
     def remove(self, element: _Element) -> None: ...
     def replace(self, old_element: _Element, new_element: _Element) -> None: ...
+    #
     # Common properties
     @property
     def tag(self) -> str: ...
@@ -178,6 +180,7 @@ class _Element(Iterable[_Element], Sized):
     @base.setter
     def base(self, value: Optional[basestring]) -> None: ...
     # Accessors
+    #
     @overload
     def __getitem__(self, x: int) -> _Element: ...
     @overload
@@ -201,6 +204,9 @@ class _Element(Iterable[_Element], Sized):
     def keys(self) -> List[str]: ...
     def values(self) -> List[str]: ...
     def items(self) -> List[Tuple[str, str]]: ...
+    #
+    # Remaining part of ElementTree API
+    #
     def getparent(self) -> Optional[_Element]: ...
     def getnext(self) -> Optional[_Element]: ...
     def getprevious(self) -> Optional[_Element]: ...
@@ -320,7 +326,9 @@ class _Element(Iterable[_Element], Sized):
         *,
         translator: _CSSTransArg = ...,
     ) -> List[_Element]: ...  # See CSSSelector class
+    #
     # Following methods marked as deprecated upstream
+    #
     def getchildren(self) -> List[_Element]: ...  # = list(self)
     @overload
     def getiterator(  # = self.iter()
