@@ -52,6 +52,7 @@ else:
 #
 
 _T = TypeVar("_T")
+_ET = TypeVar("_ET", bound=_Element)
 
 _KnownEncodings = Literal[
     "ASCII",
@@ -114,15 +115,15 @@ class QName:
     def __lt__(self, other: Any) -> bool: ...
 
 _TagName = Union[basestring, QName]
-_TagValue = Union[basestring, QName]  # FIXME Also accepts CDATA
+_TagValue = Union[basestring, QName, CDATA]
 # FIXME Tag filter is quite an oddball that it requires not the
 # element classes, but the element factory *functions* themselves
 # as value. Probably not typable.
 _TagFilter = Union[
-    Callable[..., _Element],
+    _ElemFactory[_Element],
     _Element,
     QName,
-    str,
+    basestring,
 ]
 
 # The base of _Element is *almost* an amalgam of MutableSequence[_Element]
@@ -399,11 +400,57 @@ class _ElementTree:
         **_variables: Any,
     ) -> _ElementTree: ...
 
-class __ContentOnlyElement(_Element): ...
-class _Comment(__ContentOnlyElement): ...
+# Element types and content node types
+# Don't need __ContentOnlyElement in current state, when
+# it is just a noop layer in class inheritance
+# Maybe re-add if it is decided to override various
+# _Element methods
+# class __ContentOnlyElement(_Element): ...
+class _Comment(_Element): ...
 
-class _ProcessingInstruction(__ContentOnlyElement):
-    target: basestring
+class _ProcessingInstruction(_Element):
+    @property
+    def target(self) -> str: ...
+    @target.setter
+    def target(self, value: basestring) -> None: ...  # type: ignore
+
+class _Entity(_Element):
+    # FIXME How to override read-write property with read-only one?
+    # mypy KABOOMs upon this. Probably need to think about
+    # discoupling __ContentOnlyElement from _Element
+    # @property
+    # def text(self) -> str: ...
+    @property
+    def name(self) -> str: ...
+    @name.setter
+    def name(self, value: basestring) -> None: ...  # type: ignore
+
+class CDATA:
+    def __init__(self, data: basestring) -> None: ...
+
+# Element factory functions
+#
+# Unfortunately all factories have variadic input arguments,
+# so accurate typing can't be done, and we may as well go for
+# generic alias
+_ElemFactory = Callable[..., _ET]
+
+def Comment(text: Optional[basestring] = ...) -> _Comment: ...
+
+def Element(
+    _tag: basestring,
+    attrib: Optional[_DictAnyStr] = ...,
+    nsmap: _NSMapArg = ...,
+    **extra: basestring,
+) -> _Element: ...
+
+def ProcessingInstruction(
+    target: basestring, text: Optional[basestring] = ...
+) -> _ProcessingInstruction: ...
+PI = ProcessingInstruction
+
+def Entity(name: basestring) -> _Entity: ...
+
 
 class _Attrib:
     def __setitem__(self, key: basestring, value: basestring) -> None: ...
@@ -567,13 +614,6 @@ class XSLT:
     @property
     def error_log(self) -> _ErrorLog: ...
 
-def Comment(text: Optional[basestring] = ...) -> _Comment: ...
-def Element(
-    _tag: basestring,
-    attrib: Optional[_DictAnyStr] = ...,
-    nsmap: _NSMapArg = ...,
-    **extra: basestring,
-) -> _Element: ...
 def SubElement(
     _parent: _Element,
     _tag: basestring,
@@ -586,11 +626,6 @@ def ElementTree(
     file: Union[basestring, IO[Any]] = ...,
     parser: XMLParser = ...,
 ) -> _ElementTree: ...
-def ProcessingInstruction(
-    target: basestring, text: basestring = ...
-) -> _ProcessingInstruction: ...
-
-PI = ProcessingInstruction
 
 def HTML(
     text: basestring,
@@ -682,19 +717,13 @@ class DTD(_Validator):
     ) -> None: ...
     def assertValid(self, etree: _Element) -> None: ...
 
-_ElementFactory = Callable[[Any, Dict[basestring, basestring]], _Element]
-_CommentFactory = Callable[[basestring], _Comment]
-_ProcessingInstructionFactory = Callable[
-    [basestring, basestring], _ProcessingInstruction
-]
-
 class TreeBuilder:
     def __init__(
         self,
-        element_factory: Optional[_ElementFactory] = ...,
+        element_factory: Optional[_ElemFactory[_Element]] = ...,
         parser: Optional[_BaseParser] = ...,
-        comment_factory: Optional[_CommentFactory] = ...,
-        pi_factory: Optional[_ProcessingInstructionFactory] = ...,
+        comment_factory: Optional[_ElemFactory[_Comment]] = ...,
+        pi_factory: Optional[_ElemFactory[_ProcessingInstruction]] = ...,
         insert_comments: bool = ...,
         insert_pis: bool = ...,
     ) -> None: ...
