@@ -11,6 +11,7 @@ from typing import (
     TypeVar,
     Union,
 )
+from .etree import QName
 
 _KT_co = TypeVar("_KT_co", covariant=True)
 _VT_co = TypeVar("_VT_co", covariant=True)
@@ -62,3 +63,8 @@ _ExtensionArg = Optional[
         Callable[..., Any],  # TODO extension function not investigated yet
     ]
 ]
+
+#
+# QName is supported in several places (like tag name, node attributes)
+#
+_TextArg = Union[basestring, QName]
