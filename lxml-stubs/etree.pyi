@@ -1,9 +1,26 @@
 #
 # A few thing worth noting:
-# - Read-only cython attributes are emulated with read-only properties
+#
 # - Some basic types split into _types.pyi and shared among other files
+#
 # - Some inclusion files split into its own for easier management:
 #   xmlerror, xpath
+#
+# - Read-only cython attributes are emulated with read-only properties
+#
+# - (Almost?) all writable properties have type Any, with their actual
+#   types in comment for future reference.
+#   Lxml accepts some incompatible types as input argument for writable
+#   properties, and they are canonicalized under the hook.
+#   (For example, proactive str/bytes coercion occurs throughout lxml)
+#   But both mypy and pyright aren't happy about getting/setting
+#   different types for @property, treating them as error:
+#   - https://github.com/python/mypy/issues/3004
+#   - https://github.com/microsoft/pyright/issues/993
+#   Although such practice helped users by alleviating them the need
+#   to manually convert values to correct types, Guido is reported to
+#   dislike it too. That means throw baby out of window with bathwater
+#   altogether, since such issue might never see the light.
 #
 
 import logging
@@ -167,43 +184,24 @@ class _Element(Iterable[_Element], Sized):
     #
     # Common properties
     #
-    # Most writable properties accept some incompatible types as
-    # input argument, and they are canonicalized under the hook.
-    # But both mypy and pyright aren't happy about this.
-    #
-    @property
-    def tag(self) -> str: ...
-    @tag.setter
-    def tag(self, value: _TextArg) -> None: ...  # type: ignore
+    tag: Any  # getter: str  setter: _TextArg
     @property
     def attrib(self) -> _Attrib: ...
-    @property
-    def text(self) -> Optional[str]: ...
-    @text.setter
-    def text(self, value: Optional[Union[_TextArg, CDATA]]) -> None: ...  # type: ignore
-    @property
-    def tail(self) -> Optional[str]: ...
-    @tail.setter
-    def tail(self, value: Optional[Union[_TextArg, CDATA]]) -> None: ...  # type: ignore
+    text: Any  # getter: Optional[str], setter: Optional[Union[_TextArg, CDATA]])
+    tail: Any  # ditto
     #
     # _Element-only properties
     #
-    # Following props are marked as read-only in comment,
-    # but 'sourceline' and 'base' provide __set__ method
+    # Although all of them are marked as read-only in source comment,
+    # 'sourceline' and 'base' provide __set__ method
     # --- and they do work.
     #
     @property
     def prefix(self) -> Optional[str]: ...
-    @property
-    def sourceline(self) -> Optional[int]: ...
-    @sourceline.setter
-    def sourceline(self, value: int) -> None: ...
+    sourceline: Any  # getter: Optional[int],  setter: int
     @property
     def nsmap(self) -> Dict[Optional[str], str]: ...
-    @property
-    def base(self) -> Optional[str]: ...
-    @base.setter
-    def base(self, value: Optional[basestring]) -> None: ...  # type: ignore
+    base: Any  # getter: Optional[str], setter: Optional[basestring](?)
     #
     # Accessors
     #
@@ -420,21 +418,18 @@ class _ElementTree:
 class _Comment(_Element): ...
 
 class _ProcessingInstruction(_Element):
+    target: Any  # getter: str, setter: basestring
     @property
-    def target(self) -> str: ...
-    @target.setter
-    def target(self, value: basestring) -> None: ...  # type: ignore
+    def attrib(self) -> Dict[str, str]: ...  # type: ignore[override]
 
 class _Entity(_Element):
-    # FIXME How to override read-write property with read-only one?
-    # mypy KABOOMs upon this. Probably need to think about
-    # discoupling __ContentOnlyElement from _Element
+    # FIXME _Entity.text is a read-only property, overriding
+    # the read-write _Element.text. Mypy KABOOMs upon this.
+    # Probably need to consider discoupling
+    # __ContentOnlyElement from _Element
     # @property
     # def text(self) -> str: ...
-    @property
-    def name(self) -> str: ...
-    @name.setter
-    def name(self, value: basestring) -> None: ...  # type: ignore
+    name: Any  # getter: str, setter: basestring
 
 class CDATA:
     def __init__(self, data: basestring) -> None: ...

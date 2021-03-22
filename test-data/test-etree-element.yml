@@ -68,30 +68,18 @@
 # Most writable properties accept some incompatible types as
 # input argument, and they are canonicalized under the hook.
 # But both mypy and pyright aren't happy about this.
-# Soothe mypy by only checking compatible types as input arg.
+# Soothe mypy by only checking for property existence.
 - case: element_read_write_properties
   parametrized:
     - prop: base
-      rt: Union[builtins.str, None]
-      arg_type: str
     - prop: tag
-      rt: builtins.str
-      arg_type: str
     - prop: text
-      rt: Union[builtins.str, None]
-      arg_type: str
     - prop: tail
-      rt: Union[builtins.str, None]
-      arg_type: str
     - prop: sourceline
-      rt: Union[builtins.int, None]
-      arg_type: int
   main: |
     from lxml import etree
     elem = etree.Element("foo")
-    reveal_type(elem.{{ prop }})  # N: Revealed type is '{{ rt }}'
-    val: {{ arg_type }}
-    elem.{{ prop }} = val
+    reveal_type(elem.{{ prop }})  # N: Revealed type is 'Any'
 
 # get() and set() have their own tests
 - case: element_attrib_is_like_mapping
