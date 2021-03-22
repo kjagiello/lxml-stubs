@@ -66,6 +66,13 @@ _KnownEncodings = Literal[
     "us-ascii",
 ]
 
+# serializer.pxi _findOutputMethod()
+_OutputMethods = Literal[
+    "html",
+    "text",
+    "xml",
+]
+
 # For some tags / attribute keys / attribute values below
 #
 # XXX Note that the path argument in ElementPath methods are
@@ -370,7 +377,7 @@ class _ElementTree:
         self,
         file: Union[basestring, IO[Any]],
         encoding: basestring = ...,
-        method: basestring = ...,
+        method: Union[_OutputMethods, Literal["c14n", "c14n2"]] = ...,
         pretty_print: bool = ...,
         xml_declaration: Any = ...,
         with_tail: Any = ...,
@@ -662,7 +669,7 @@ def fromstring(
 def tostring(
     element_or_tree: Union[_Element, _ElementTree],
     encoding: Union[Type[str], Literal["unicode"]],
-    method: str = ...,
+    method: Union[_OutputMethods, Literal["c14n", "c14n2"]] = ...,
     xml_declaration: bool = ...,
     pretty_print: bool = ...,
     with_tail: bool = ...,
@@ -677,7 +684,7 @@ def tostring(
     element_or_tree: Union[_Element, _ElementTree],
     # Should be anything but "unicode", cannot be typed
     encoding: Optional[_KnownEncodings] = ...,
-    method: str = ...,
+    method: Union[_OutputMethods, Literal["c14n", "c14n2"]] = ...,
     xml_declaration: bool = ...,
     pretty_print: bool = ...,
     with_tail: bool = ...,
@@ -691,7 +698,7 @@ def tostring(
 def tostring(
     element_or_tree: Union[_Element, _ElementTree],
     encoding: Union[str, type] = ...,
-    method: str = ...,
+    method: Union[_OutputMethods, Literal["c14n", "c14n2"]] = ...,
     xml_declaration: bool = ...,
     pretty_print: bool = ...,
     with_tail: bool = ...,
