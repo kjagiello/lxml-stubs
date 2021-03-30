@@ -21,14 +21,16 @@ from typing import (
     MutableMapping,
     MutableSet,
     Optional,
+    Sequence,
     Tuple,
     Type,
     TypeVar,
     Union,
-    overload
+    overload,
 )
 
 from .. import etree
+from .._xpath import _XPathObject
 from .._types import (
     SupportsItems,
     _ExtensionArg,
@@ -182,15 +184,111 @@ class HtmlElement(etree.ElementBase, HtmlMixin):
         self, expr: basestring, translator: _CSSTransArg = ...
     ) -> List[HtmlElement]: ...
     def set(self, key: _TextArg, value: Optional[_TextArg] = ...) -> None: ...
-    # XXX Return HTML elements instead of etree._Element, providing more
-    # annotation context for users. But the result is getting too cluttered
-    def xpath(
+    # Many methods overrided to return HTML elements
+    # It is not a simple return type replacement though, since
+    # XML and HTML elements have different inheritance structure (!),
+    # and some operations only make sense on subset of HTML elements
+    @overload  # type: ignore[override]
+    def __getitem__(self, x: int) -> _AnyHtmlElement: ...
+    @overload
+    def __getitem__(self, x: slice) -> List[_AnyHtmlElement]: ...
+    def __iter__(self) -> Iterator[_AnyHtmlElement]: ...
+    def __reversed__(self) -> Iterator[_AnyHtmlElement]: ...
+    def getparent(self) -> Optional[_AnyHtmlElement]: ...
+    def getnext(self) -> Optional[_AnyHtmlElement]: ...
+    def getprevious(self) -> Optional[_AnyHtmlElement]: ...
+    @overload
+    def itersiblings(
+        self,
+        tag: Optional[Sequence[etree._TagFilter]] = ...,
+        preceding: bool = ...,
+    ) -> Iterator[_AnyHtmlElement]: ...
+    @overload
+    def itersiblings(
+        self,
+        tag: etree._TagFilter,
+        *tags: etree._TagFilter,
+        preceding: bool = ...,
+    ) -> Iterator[_AnyHtmlElement]: ...
+    @overload
+    def iterancestors(
+        self,
+        tag: Optional[Sequence[etree._TagFilter]] = ...,
+    ) -> Iterator[_AnyHtmlElement]: ...
+    @overload
+    def iterancestors(
+        self,
+        tag: etree._TagFilter,
+        *tags: etree._TagFilter,
+    ) -> Iterator[_AnyHtmlElement]: ...
+    @overload
+    def iterdescendants(
+        self,
+        tag: Optional[Sequence[etree._TagFilter]] = ...,
+    ) -> Iterator[_AnyHtmlElement]: ...
+    @overload
+    def iterdescendants(
+        self,
+        tag: etree._TagFilter,
+        *tags: etree._TagFilter,
+    ) -> Iterator[_AnyHtmlElement]: ...
+    @overload
+    def iterchildren(
+        self,
+        tag: Optional[Sequence[etree._TagFilter]] = ...,
+        reversed: bool = ...,
+    ) -> Iterator[_AnyHtmlElement]: ...
+    @overload
+    def iterchildren(
+        self,
+        tag: etree._TagFilter,
+        *tags: etree._TagFilter,
+        reversed: bool = ...,
+    ) -> Iterator[_AnyHtmlElement]: ...
+    @overload
+    def iter(
+        self,
+        tag: Optional[Sequence[etree._TagFilter]] = ...,
+    ) -> Iterator[_AnyHtmlElement]: ...
+    @overload
+    def iter(
+        self,
+        tag: etree._TagFilter,
+        *tags: etree._TagFilter,
+    ) -> Iterator[_AnyHtmlElement]: ...
+    def makeelement(
+        self,
+        _tag: _TextArg,
+        attrib: Optional[SupportsItems[_TextArg, _TextArg]] = ...,
+        nsmap: _NSMapArg = ...,
+        **_extra: _TextArg,
+    ) -> HtmlElement: ...
+    #
+    # XXX Subtle difference: find() and friends in xml.etree.ElementTree
+    # would include comment and processing instructions, but
+    # for lxml this is NOT the case (undocumented or bug? LP #1921675)
+    #
+    def find(
+        self, path: etree._ElemPathArg, namespaces: _NSMapArg = ...
+    ) -> Optional[HtmlElement]: ...
+    def findall(  # type: ignore[override]
+        self,
+        path: etree._ElemPathArg,
+        namespaces: _NSMapArg = ...,
+    ) -> List[HtmlElement]: ...
+    # findtext() doesn't need any override
+    def iterfind(
+        self,
+        path: etree._ElemPathArg,
+        namespaces: _NSMapArg = ...,
+    ) -> Iterator[HtmlElement]: ...
+    def xpath(  # type: ignore[override]
         self,
         _path: basestring,
         namespaces: _NonDefaultNSMapArg = ...,
         extensions: _ExtensionArg = ...,
         smart_strings: bool = ...,
-    ) -> etree._XPathObject[_AnyHtmlElement]: ...
+    ) -> _XPathObject[_AnyHtmlElement]: ...
 
 class HtmlComment(etree.CommentBase, HtmlMixin): ...
 class HtmlEntity(etree.EntityBase, HtmlMixin): ...
