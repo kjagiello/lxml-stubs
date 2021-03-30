@@ -26,11 +26,11 @@
 import logging
 import sys
 from typing import (
+    IO,
     Any,
     Callable,
     Collection,
     Dict,
-    IO,
     Iterable,
     Iterator,
     List,
@@ -53,8 +53,8 @@ from ._types import (
     _ListAnyStr,
     _NonDefaultNSMapArg,
     _NSMapArg,
-    basestring,
     _TextArg,
+    basestring,
 )
 from ._xmlerror import _BaseErrorLog, _ErrorLog, _LogEntry
 from ._xpath import _XPathEvaluatorBase, _XPathObject, _XPathVarArg
@@ -493,7 +493,6 @@ class _Attrib(Collection[str]):
     def __le__(self, other: Any) -> bool: ...
     def __lt__(self, other: Any) -> bool: ...
 
-
 class _XSLTResultTree(_ElementTree, SupportsBytes):
     def __bytes__(self) -> bytes: ...
 
@@ -760,7 +759,7 @@ class CustomElementClassLookup(FallbackElementClassLookup):
         # special handling for 'element', 'comment', 'PI', 'entity';
         # but accepts anything as fallback case (_lookupDefaultElementClass())
         # following redundant annotation is meant for code writers as hints
-        type: Union[Literal['element', 'comment', 'PI', 'entity'], Any],
+        type: Union[Literal["element", "comment", "PI", "entity"], Any],
         doc: str,
         namespace: Optional[str],
         name: Optional[str],
@@ -772,7 +771,6 @@ class CustomElementClassLookup(FallbackElementClassLookup):
 # ParserBasedElementClassLookup
 # PythonElementClassLookup
 # def set_element_class_lookup()
-
 
 #
 # Public members of xmlerror.pxi

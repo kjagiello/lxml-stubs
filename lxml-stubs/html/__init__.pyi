@@ -1,5 +1,7 @@
 #
-# Making some compromise for HTML, in that iteration of subelements
+# Couple of issues:
+#
+# 1. Making some compromise for HTML, in that iteration of subelements
 # and xpath evaluation would produce HTML elements instead of the base
 # etree._Element. It is technically "correct" that those operations
 # may not produce HTML elements when XML nodes are manually inserted
@@ -7,6 +9,17 @@
 # don't involve such manually constructed hybrid element trees.
 # Making it absolutely "correct" harms most users by losing context.
 #
+# 2. Lots of "type: ignore" here. The majorify of them is that,
+# cssselect() and set() methods from HtmlMixin and etree._Element are
+# incompatible. All element classes inherited from both are affected.
+
+import abc
+import sys
+
+if sys.version_info < (3, 8):
+    from typing_extensions import Literal
+else:
+    from typing import Literal
 
 from typing import (
     Any,
@@ -16,10 +29,10 @@ from typing import (
     Iterable,
     Iterator,
     List,
-    Literal,
     Mapping,
     MutableMapping,
     MutableSet,
+    NoReturn,
     Optional,
     Sequence,
     Tuple,
@@ -30,7 +43,6 @@ from typing import (
 )
 
 from .. import etree
-from .._xpath import _XPathObject
 from .._types import (
     SupportsItems,
     _ExtensionArg,
@@ -39,6 +51,7 @@ from .._types import (
     _TextArg,
     basestring,
 )
+from .._xpath import _XPathObject
 from ..cssselect import _CSSTransArg
 
 _T = TypeVar("_T")
@@ -49,18 +62,32 @@ XHTML_NAMESPACE: str = ...
 # Class attr access only require get(), __delitem__ and __setitem__
 # Though _Attrib is dict-like, it is not 100% compatible with any
 # existing ABC container types. More work pending.
-class _AttribMapping(Mapping[str, str]):
+class _AttribMapping(Mapping[str, str], metaclass=abc.ABCMeta):
     def __delitem__(self, key: str) -> None: ...
     def __setitem__(self, key: str, value: str) -> None: ...
 
+# XXX Is the inheritance from MutableSet a wrong decision?
+# Due to internal implementation, some MutableSet methods would
+# cause exception; out of all logical operations, only ixor, isub
+# and ior are known to work
 class Classes(MutableSet[str]):
     _attributes: _AttribMapping
     def __init__(
         self,
         attributes: _AttribMapping,
     ) -> None: ...
+    def __contains__(self, key: Any) -> bool: ...
+    def __iter__(self) -> Iterator[str]: ...
+    def __len__(self) -> int: ...
+    def add(self, value: str) -> None: ...
+    def discard(self, value: str) -> None: ...
     def update(self, values: Iterable[str]) -> None: ...
     def toggle(self, value: str) -> bool: ...
+    # The definition in typing.MutableSet is too strict.
+    # Pick the actual implementation from collection.abc
+    def __ior__(self, s: Iterable[str]) -> Classes: ...  # type: ignore[misc,override]
+    def __isub__(self, s: Iterable[str]) -> Classes: ...  # type: ignore[misc,override]
+    def __ixor__(self, s: Iterable[str]) -> Classes: ...  # type: ignore[misc,override]
 
 class HtmlMixin:
     classes: Classes
@@ -93,9 +120,8 @@ class HtmlMixin:
         self, id: basestring, default: _T, *_: Any
     ) -> Union[HtmlElement, _T]: ...
     def text_content(self) -> str: ...
-    # Note the difference of return type from _Element.cssselect
     def cssselect(
-        self, expr: basestring, translator: _CSSTransArg = ...
+        self, expr: str, translator: _CSSTransArg = ...
     ) -> List[HtmlElement]: ...
     #
     # Link functions
@@ -114,9 +140,9 @@ class HtmlMixin:
     def iterlinks(self) -> Iterator[Tuple[HtmlElement, Optional[str], str, int]]: ...
     def rewrite_links(
         self,
-        link_repl_func: Callable[[AnyStr], AnyStr],
+        link_repl_func: Callable[[str], str],
         resolve_base_href: bool = ...,
-        base_href: Optional[AnyStr] = ...,
+        base_href: Optional[str] = ...,
     ) -> None: ...
 
 # These are HtmlMixin methods converted to standard functions,
@@ -165,7 +191,7 @@ def iterlinks(
 ) -> Iterator[Tuple[HtmlElement, Optional[str], str, int]]: ...
 def rewrite_links(
     doc: Union[AnyStr, HtmlElement],
-    link_repl_func: Callable[[AnyStr], AnyStr],
+    link_repl_func: Callable[[AnyStr], AnyStr],  # TODO needs validation
     resolve_base_href: bool = ...,
     base_href: Optional[AnyStr] = ...,
     *,
@@ -180,8 +206,8 @@ class HtmlElement(etree.ElementBase, HtmlMixin):
     # Copy the definition of cssselect() and set() from HtmlMixin
     # instead of using something like "set = HtmlMixin.set", since
     # IDE users may get confused about type(self) = HtmlMixin
-    def cssselect(
-        self, expr: basestring, translator: _CSSTransArg = ...
+    def cssselect(  # type: ignore[override]
+        self, expr: str, translator: _CSSTransArg = ...
     ) -> List[HtmlElement]: ...
     def set(self, key: _TextArg, value: Optional[_TextArg] = ...) -> None: ...
     # Many methods overrided to return HTML elements
@@ -290,9 +316,9 @@ class HtmlElement(etree.ElementBase, HtmlMixin):
         smart_strings: bool = ...,
     ) -> _XPathObject[_AnyHtmlElement]: ...
 
-class HtmlComment(etree.CommentBase, HtmlMixin): ...
-class HtmlEntity(etree.EntityBase, HtmlMixin): ...
-class HtmlProcessingInstruction(etree.PIBase, HtmlMixin): ...
+class HtmlComment(etree.CommentBase, HtmlMixin): ...  # type: ignore[misc]
+class HtmlEntity(etree.EntityBase, HtmlMixin): ...  # type: ignore[misc]
+class HtmlProcessingInstruction(etree.PIBase, HtmlMixin): ...  # type: ignore[misc]
 
 _AnyHtmlElement = Union[
     HtmlComment,
@@ -321,7 +347,7 @@ class HtmlElementClassLookup(etree.CustomElementClassLookup):
         node_type: Union[Literal["element", "comment", "PI", "entity"], Any],
         document: Any,  # TODO
         namespace: Optional[str],
-        name: str,
+        name: Optional[str],
     ) -> Optional[Type[_AnyHtmlElement]]: ...
 
 class FormElement(HtmlElement):
@@ -349,6 +375,12 @@ def submit_form(
 class FieldsDict(MutableMapping[str, str]):
     inputs: InputGetter
     def __init__(self, inputs: InputGetter) -> None: ...
+    def __getitem__(self, item: str) -> str: ...
+    def __setitem__(self, item: str, value: str) -> None: ...
+    def __delitem__(self, item: str) -> NoReturn: ...
+    def __contains__(self, key: Any) -> bool: ...
+    def __iter__(self) -> Iterator[str]: ...
+    def __len__(self) -> int: ...
 
 # Quoting from source: it's unclear if this is a dictionary-like object
 # or list-like object
@@ -364,14 +396,17 @@ class InputGetter(Collection[_AnyInputElement]):
     def items(
         self,
     ) -> List[Tuple[str, Union[_AnyInputElement, RadioGroup, CheckboxGroup]]]: ...
+    def __contains__(self, key: Any) -> bool: ...
+    def __iter__(self) -> Iterator[_AnyInputElement]: ...
+    def __len__(self) -> int: ...
 
 class InputMixin:
     name: Optional[str]  # setter: Optional[basestring]
 
-class TextareaElement(InputMixin, HtmlElement):
+class TextareaElement(InputMixin, HtmlElement):  # type: ignore[misc]
     value: str
 
-class SelectElement(InputMixin, HtmlElement):
+class SelectElement(InputMixin, HtmlElement):  # type: ignore[misc]
     @property
     def value(self) -> Union[str, MultipleSelectOptions]: ...
     @value.setter  # Union[basestring, Collection[str]]
@@ -388,6 +423,11 @@ class MultipleSelectOptions(MutableSet[str]):
     def __init__(self, select: SelectElement) -> None: ...
     @property
     def options(self) -> Iterator[HtmlElement]: ...
+    def __contains__(self, key: Any) -> bool: ...
+    def __iter__(self) -> Iterator[str]: ...
+    def __len__(self) -> int: ...
+    def add(self, value: str) -> None: ...
+    def discard(self, value: str) -> None: ...
 
 class RadioGroup(List[InputElement]):
     value: Optional[str]
@@ -405,8 +445,13 @@ class CheckboxGroup(List[InputElement]):
 class CheckboxValues(MutableSet[str]):
     group: CheckboxGroup = ...
     def __init__(self, group: CheckboxGroup) -> None: ...
+    def __contains__(self, key: Any) -> bool: ...
+    def __iter__(self) -> Iterator[str]: ...
+    def __len__(self) -> int: ...
+    def add(self, value: str) -> None: ...
+    def discard(self, value: str) -> None: ...
 
-class InputElement(InputMixin, HtmlElement):
+class InputElement(InputMixin, HtmlElement):  # type: ignore[misc]
     type: str
     value: Optional[str]
     @property

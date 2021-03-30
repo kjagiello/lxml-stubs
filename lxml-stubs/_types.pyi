@@ -11,6 +11,7 @@ from typing import (
     TypeVar,
     Union,
 )
+
 from .etree import QName
 
 _KT_co = TypeVar("_KT_co", covariant=True)

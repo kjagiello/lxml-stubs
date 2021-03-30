@@ -36,7 +36,7 @@ class CSSSelector(XPath):
     css: str = ...
     def __init__(
         self,
-        css: str,  # byte str unaccepted, unlike XPath
+        css: str,  # byte str unaccepted, same for elem methods
         namespaces: _NonDefaultNSMapArg = ...,
         translator: _CSSTransArg = ...,
     ) -> None: ...
