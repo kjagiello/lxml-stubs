@@ -464,16 +464,65 @@ class InputElement(InputMixin, HtmlElement):  # type: ignore[misc]
 class LabelElement(HtmlElement):
     for_element: Optional[HtmlElement]  # setter: None disallowed
 
-# Encoding issue is similar to etree.tostring()
+##########################################################
+# BEGIN OF HAZMAT
+#
+# 1. Although lxml.html.tostring() does not forbid method="c14n" (or c14n2),
+# calling tostring() this way would render almost all keyword arguments
+# useless, defeating the purpose of existence of html.tostring(). Besides,
+# tostring() here doesn't accept any c14n specific arguments, so it is
+# better to let etree.tostring() handle C14N.
+# 2. First 2 overloads are effectively the same, one in keyword argument
+# form and another in positional argument form, up till 'encoding' argument.
+# The caveat invsolved is that, this overload must not have default value
+# (= None), otherwise mypy would bark loudly about conflicting return type
+# with overloads further down that returns bytes. Yet 'encoding' is preceded
+# with 2 other positonal arguments with defaults.
+@overload
+def tostring(
+    doc: Union[etree._Element, etree._ElementTree],
+    *,
+    encoding: Union[Type[str], Literal["unicode"]],
+    pretty_print: bool = ...,
+    include_meta_content_type: bool = ...,
+    method: Optional[etree._output_methods] = ...,
+    with_tail: bool = ...,
+    doctype: Optional[basestring] = ...,
+) -> str: ...
+@overload
+def tostring(
+    doc: Union[etree._Element, etree._ElementTree],
+    pretty_print: bool,
+    include_meta_content_type: bool,
+    encoding: Union[Type[str], Literal["unicode"]],
+    method: Optional[etree._output_methods] = ...,
+    with_tail: bool = ...,
+    doctype: Optional[basestring] = ...,
+) -> str: ...
+@overload
 def tostring(
     doc: Union[etree._Element, etree._ElementTree],
     pretty_print: bool = ...,
     include_meta_content_type: bool = ...,
-    encoding: Optional[Any] = ...,
-    method: etree._OutputMethods = ...,
+    encoding: Optional[etree._KnownEncodings] = ...,
+    method: Optional[etree._output_methods] = ...,
     with_tail: bool = ...,
-    doctype: Optional[str] = ...,
+    doctype: Optional[basestring] = ...,
 ) -> bytes: ...
+@overload  # catchall
+def tostring(
+    doc: Union[etree._Element, etree._ElementTree],
+    pretty_print: bool = ...,
+    include_meta_content_type: bool = ...,
+    encoding: Optional[Union[Type[str], str]] = ...,
+    method: Optional[str] = ...,
+    with_tail: bool = ...,
+    doctype: Optional[basestring] = ...,
+) -> basestring: ...
+
+#
+# END OF HAZMAT
+##########################################################
 
 # Intended for debugging only
 # def open_in_browser(doc: Any, encoding: Optional[Any] = ...) -> None: ...

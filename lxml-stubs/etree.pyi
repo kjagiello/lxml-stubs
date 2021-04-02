@@ -50,7 +50,7 @@ from ._types import (
     _Dict_Tuple2AnyStr_Any,
     _DictAnyStr,
     _ExtensionArg,
-    _ListAnyStr,
+    _filename_or_writable,
     _NonDefaultNSMapArg,
     _NSMapArg,
     _TextArg,
@@ -84,7 +84,10 @@ _KnownEncodings = Literal[
 ]
 
 # serializer.pxi _findOutputMethod()
-_OutputMethods = Literal[
+_output_methods = Literal[
+    "HTML",
+    "TEXT",
+    "XML",
     "html",
     "text",
     "xml",
@@ -369,26 +372,69 @@ class _ElementTree:
     parser = ...  # type: XMLParser
     def getpath(self, element: _Element) -> str: ...
     def getroot(self) -> _Element: ...
+    @overload  # method=xml,html,xhtml
     def write(
         self,
-        file: Union[basestring, IO[Any]],
+        file: _filename_or_writable,
+        *,
         encoding: basestring = ...,
-        method: Union[_OutputMethods, Literal["c14n", "c14n2"]] = ...,
+        method: Optional[_output_methods] = ...,
         pretty_print: bool = ...,
-        xml_declaration: Any = ...,
-        with_tail: Any = ...,
-        standalone: bool = ...,
-        compression: int = ...,
+        xml_declaration: Optional[bool] = ...,
+        with_tail: bool = ...,
+        standalone: Optional[bool] = ...,
+        doctype: Optional[basestring] = ...,
+        compression: Optional[int] = ...,
+    ) -> None: ...
+    @overload  # method=c14n
+    def write(
+        self,
+        file: _filename_or_writable,
+        *,
+        method: Literal["c14n"] = ...,
         exclusive: bool = ...,
         with_comments: bool = ...,
-        inclusive_ns_prefixes: _ListAnyStr = ...,
+        compression: Optional[int] = ...,
+        inclusive_ns_prefixes: Optional[Iterable[basestring]] = ...,
     ) -> None: ...
+    @overload  # method=c14n2
+    def write(
+        self,
+        file: _filename_or_writable,
+        *,
+        method: Literal["c14n2"] = ...,
+        with_comments: bool = ...,
+        compression: Optional[int] = ...,
+        strip_text: bool = ...,
+    ) -> None: ...
+    @overload  # catchall
+    def write(
+        self,
+        file: _filename_or_writable,
+        *,
+        encoding: basestring = ...,
+        method: Optional[str] = ...,
+        pretty_print: bool = ...,
+        xml_declaration: Optional[bool] = ...,
+        with_tail: bool = ...,
+        standalone: Optional[bool] = ...,
+        doctype: Optional[basestring] = ...,
+        compression: Optional[int] = ...,
+        exclusive: bool = ...,
+        inclusive_ns_prefixes: Optional[Iterable[basestring]] = ...,
+        with_comments: bool = ...,
+        strip_text: bool = ...,
+    ) -> None: ...
+    # Equivalent to _ElementTree.write(method="c14n")
+    # Marked as deprecated as of lxml 4.4
     def write_c14n(
         self,
-        file: Union[basestring, IO[Any]],
+        file: _filename_or_writable,
+        *,
+        exclusive: bool = ...,
         with_comments: bool = ...,
-        compression: int = ...,
-        inclusive_ns_prefixes: Iterable[basestring] = ...,
+        compression: Optional[int] = ...,
+        inclusive_ns_prefixes: Optional[Iterable[basestring]] = ...,
     ) -> None: ...
     def _setroot(self, root: _Element) -> None: ...
     def xpath(
@@ -645,48 +691,67 @@ def parse(
 def fromstring(
     text: basestring, parser: XMLParser = ..., *, base_url: basestring = ...
 ) -> _Element: ...
+
+# Native str -> no XML declaration
 @overload
 def tostring(
     element_or_tree: Union[_Element, _ElementTree],
+    *,
     encoding: Union[Type[str], Literal["unicode"]],
-    method: Union[_OutputMethods, Literal["c14n", "c14n2"]] = ...,
-    xml_declaration: bool = ...,
+    method: Optional[_output_methods] = ...,
     pretty_print: bool = ...,
     with_tail: bool = ...,
-    standalone: bool = ...,
-    doctype: str = ...,
-    exclusive: bool = ...,
-    with_comments: bool = ...,
-    inclusive_ns_prefixes: Any = ...,
+    standalone: Optional[bool] = ...,
+    doctype: Optional[basestring] = ...,
 ) -> str: ...
 @overload
 def tostring(
     element_or_tree: Union[_Element, _ElementTree],
+    *,
     # Should be anything but "unicode", cannot be typed
     encoding: Optional[_KnownEncodings] = ...,
-    method: Union[_OutputMethods, Literal["c14n", "c14n2"]] = ...,
-    xml_declaration: bool = ...,
+    method: Optional[_output_methods] = ...,
+    xml_declaration: Optional[bool] = ...,
     pretty_print: bool = ...,
     with_tail: bool = ...,
-    standalone: bool = ...,
-    doctype: str = ...,
+    standalone: Optional[bool] = ...,
+    doctype: Optional[basestring] = ...,
+) -> bytes: ...
+
+# Under XML Canonicalization (C14N) mode, most arguments are ignored,
+# some arguments would even raise exception outright if specified.
+@overload
+def tostring(
+    element_or_tree: Union[_Element, _ElementTree],
+    *,
+    method: Literal["c14n"] = ...,
     exclusive: bool = ...,
+    inclusive_ns_prefixes: Optional[Iterable[basestring]] = ...,
     with_comments: bool = ...,
-    inclusive_ns_prefixes: Any = ...,
 ) -> bytes: ...
 @overload
 def tostring(
     element_or_tree: Union[_Element, _ElementTree],
-    encoding: Union[str, type] = ...,
-    method: Union[_OutputMethods, Literal["c14n", "c14n2"]] = ...,
-    xml_declaration: bool = ...,
+    *,
+    method: Literal["c14n2"] = ...,
+    with_comments: bool = ...,
+    strip_text: bool = ...,
+) -> bytes: ...
+@overload  # catchall
+def tostring(
+    element_or_tree: Union[_Element, _ElementTree],
+    *,
+    encoding: Union[str, Type[str]] = ...,
+    method: Optional[str] = ...,
+    xml_declaration: Optional[bool] = ...,
     pretty_print: bool = ...,
     with_tail: bool = ...,
-    standalone: bool = ...,
-    doctype: str = ...,
+    standalone: Optional[bool] = ...,
+    doctype: Optional[basestring] = ...,
     exclusive: bool = ...,
+    inclusive_ns_prefixes: Optional[Iterable[basestring]] = ...,
     with_comments: bool = ...,
-    inclusive_ns_prefixes: Any = ...,
+    strip_text: bool = ...,
 ) -> basestring: ...
 
 class Error(Exception): ...

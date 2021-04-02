@@ -23,15 +23,12 @@
 
 -   case: etree_tostring_encoding_default_or_type
     disable_cache: true
-    parametrized:
-        -   kwd: null
-            rt: builtins.bytes
-        -   kwd: encoding=str
-            rt: builtins.str
     main: |
         from lxml import etree
-        string = etree.tostring(etree.Element("foo"), {{ kwd }})
-        reveal_type(string)  # N: Revealed type is '{{ rt }}'
+        result1 = etree.tostring(etree.Element("foo"))
+        reveal_type(result1)  # N: Revealed type is 'builtins.bytes'
+        result2 = etree.tostring(etree.Element("foo"), encoding=str)
+        reveal_type(result2)  # N: Revealed type is 'builtins.str'
 
 -   case: etree_tostring_encoding_specific
     disable_cache: true
