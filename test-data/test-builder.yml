@@ -1,11 +1,9 @@
 - case: builder_default_type
-  disable_cache: true
   main: |
     from lxml.builder import E
     reveal_type(E)  # N: Revealed type is 'lxml.builder.ElementMaker'
 
 - case: builder_create_elements
-  disable_cache: true
   parametrized:
     - val: E.foo()
       rt: lxml.etree._Element

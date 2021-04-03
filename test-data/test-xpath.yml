@@ -1,12 +1,10 @@
 - case: xpath_create_selector
-  disable_cache: true
   main: |
     from lxml import etree
     xpath = etree.XPath("//text()")
     reveal_type(xpath)  # N: Revealed type is 'lxml.etree.XPath'
 
 - case: xpath_create_evaluator_for_element
-  disable_cache: true
   main: |
     from lxml import etree
     root = etree.XML("<root><a>TEXT</a></root>")
@@ -22,7 +20,6 @@
     main:8: note: Revealed type is 'lxml.etree.XPathElementEvaluator'
 
 - case: xpath_create_evaluator_for_document
-  disable_cache: true
   main: |
     from lxml import etree
     root = etree.XML("<root><a>TEXT</a></root>")
@@ -38,7 +35,6 @@
     main:8: note: Revealed type is 'lxml.etree.XPathDocumentEvaluator'
 
 - case: xpath_create_evaluator_autodetect
-  disable_cache: true
   parametrized:
   - arg: root
     rt: lxml.etree.XPathElementEvaluator
@@ -53,7 +49,6 @@
     reveal_type(evaluator)  # N: Revealed type is '{{ rt }}'
 
 - case: xpath_create_evaluator_bad_type
-  disable_cache: true
   main: |
     from lxml import etree
     evaluator = etree.XPathEvaluator('fail_here')
@@ -64,7 +59,6 @@
     main:2: note:     def XPathEvaluator(etree_or_element: _ElementTree, *, namespaces: Optional[Mapping[Union[str, bytes], Union[str, bytes]]] = ..., extensions: Optional[Mapping[Tuple[Union[str, bytes, None], Union[str, bytes]], Callable[..., Any]]] = ..., regexp: bool = ..., smart_strings: bool = ...) -> XPathDocumentEvaluator
 
 - case: xpath_evaluation_result
-  disable_cache: true
   main: |
     from lxml import etree
     document = etree.XML("<root><a>TEXT</a></root>")

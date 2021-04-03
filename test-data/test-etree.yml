@@ -1,12 +1,10 @@
 - case: etree_from_string_returns_element
-  disable_cache: true
   main: |
     from lxml import etree
     document = etree.fromstring("<doc></doc>")
     reveal_type(document)  # N: Revealed type is 'lxml.etree._Element'
 
 - case: etree_xmlparser_makeelement
-  disable_cache: true
   main: |
     from lxml import etree
     parser = etree.XMLParser()
@@ -14,7 +12,6 @@
     reveal_type(element)  # N: Revealed type is 'lxml.etree._Element'
 
 - case: etree_htmlparser_makeelement
-  disable_cache: true
   main: |
     from lxml import etree
     parser = etree.HTMLParser()
@@ -22,7 +19,6 @@
     reveal_type(element)  # N: Revealed type is 'lxml.etree._Element'
 
 - case: etree_tostring_encoding_default_or_type
-  disable_cache: true
   main: |
     from lxml import etree
     result1 = etree.tostring(etree.Element("foo"))
@@ -31,7 +27,6 @@
     reveal_type(result2)  # N: Revealed type is 'builtins.str'
 
 - case: etree_tostring_encoding_specific
-  disable_cache: true
   parametrized:
     - val: ascii
       rt: builtins.bytes
@@ -47,27 +42,23 @@
     reveal_type(string)  # N: Revealed type is '{{ rt }}'
 
 - case: etree_treebuilder_implements_parsertarget
-  disable_cache: true
   main: |
     # this test does no explicit checks; it should pass
     # if mypy doesn't raise an "Incompatible types in assignment"
     from lxml import etree
     target: etree.ParserTarget = etree.TreeBuilder()
 - case: etree_HTML_returns_element
-  disable_cache: true
   main: |
     from lxml import etree
     document = etree.HTML("<doc></doc>", parser=etree.HTMLParser(), base_url="http://example.com/")
     reveal_type(document)  # N: Revealed type is 'lxml.etree._Element'
 - case: etree_XML_returns_element
-  disable_cache: true
   main: |
     from lxml import etree
     document = etree.XML("<doc></doc>", parser=etree.XMLParser(), base_url="http://example.com/")
     reveal_type(document)  # N: Revealed type is 'lxml.etree._Element'
 
 - case: etree_pyerrorlog_object
-  disable_cache: true
   main: |
     from lxml import etree
     obj = etree.PyErrorLog()
@@ -75,7 +66,6 @@
     reveal_type(obj.level_map)  # N: Revealed type is 'builtins.dict[builtins.int, builtins.int]'
 
 - case: etree_error_log_struct
-  disable_cache: true
   main: |
     from lxml import etree
     parser = etree.XMLParser()
