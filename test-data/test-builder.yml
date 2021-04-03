@@ -1,20 +1,20 @@
--   case: builder_default_type
-    disable_cache: true
-    main: |
-        from lxml.builder import E
-        reveal_type(E)  # N: Revealed type is 'lxml.builder.ElementMaker'
+- case: builder_default_type
+  disable_cache: true
+  main: |
+    from lxml.builder import E
+    reveal_type(E)  # N: Revealed type is 'lxml.builder.ElementMaker'
 
--   case: builder_create_elements
-    disable_cache: true
-    parametrized:
-        - val: E.foo()
-          rt: lxml.etree._Element
-        - val: E.bar()
-          rt: lxml.etree._Element
-        - val: E.__foobar__()
-          rt: lxml.etree._Element
-        - val: E.__str__()
-          rt: builtins.str
-    main: |
-        from lxml.builder import E
-        reveal_type({{ val }})  # N: Revealed type is '{{ rt }}'
+- case: builder_create_elements
+  disable_cache: true
+  parametrized:
+    - val: E.foo()
+      rt: lxml.etree._Element
+    - val: E.bar()
+      rt: lxml.etree._Element
+    - val: E.__foobar__()
+      rt: lxml.etree._Element
+    - val: E.__str__()
+      rt: builtins.str
+  main: |
+    from lxml.builder import E
+    reveal_type({{ val }})  # N: Revealed type is '{{ rt }}'
