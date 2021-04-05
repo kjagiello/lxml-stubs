@@ -7,21 +7,16 @@
   parametrized:
     - args: namespace=ns
     - args: makeelement=etree.Element
-    # Bug of some sort? Inferred type never matches explicit type
-    # in Dict arguments, so disable nsmap and typemap tests for now
-    # args: namespace=ns, nsmap=map
-    # args: typemap=typemap
+    - args: namespace=ns, nsmap=map
+    - args: typemap=typemap
   main: |
     from typing import Callable, Dict, Type
     from lxml.builder import ElementMaker
     from lxml import etree
     ns = "http://my.ns/"
     map = {'ns': ns}
-    # 1. Always fail
-    # def add_text(elem: etree._Element, item: str) -> None: ...
-    # typemap = {str: add_text}
-    # 2. works fine
-    # typemap: Dict[Type[str], Callable[[etree._Element, str], None]]
+    def add_text(elem: etree._Element, item: str) -> None: ...
+    typemap = {str: add_text}
     E = ElementMaker({{ args }})
     reveal_type(E)  # N: Revealed type is 'lxml.builder.ElementMaker'
 

@@ -55,8 +55,8 @@
   out: |
     main:2: error: No overload variant of "XPathEvaluator" matches argument type "str"
     main:2: note: Possible overload variants:
-    main:2: note:     def XPathEvaluator(etree_or_element: _Element, *, namespaces: Optional[Mapping[Union[str, bytes], Union[str, bytes]]] = ..., extensions: Optional[Mapping[Tuple[Union[str, bytes, None], Union[str, bytes]], Callable[..., Any]]] = ..., regexp: bool = ..., smart_strings: bool = ...) -> XPathElementEvaluator
-    main:2: note:     def XPathEvaluator(etree_or_element: _ElementTree, *, namespaces: Optional[Mapping[Union[str, bytes], Union[str, bytes]]] = ..., extensions: Optional[Mapping[Tuple[Union[str, bytes, None], Union[str, bytes]], Callable[..., Any]]] = ..., regexp: bool = ..., smart_strings: bool = ...) -> XPathDocumentEvaluator
+    main:2: note:     def XPathEvaluator(etree_or_element: _Element, *, namespaces: Union[Mapping[str, Union[str, bytes]], Mapping[bytes, Union[str, bytes]], None] = ..., extensions: Optional[Mapping[Tuple[Union[str, bytes, None], Union[str, bytes]], Callable[..., Any]]] = ..., regexp: bool = ..., smart_strings: bool = ...) -> XPathElementEvaluator
+    main:2: note:     def XPathEvaluator(etree_or_element: _ElementTree, *, namespaces: Union[Mapping[str, Union[str, bytes]], Mapping[bytes, Union[str, bytes]], None] = ..., extensions: Optional[Mapping[Tuple[Union[str, bytes, None], Union[str, bytes]], Callable[..., Any]]] = ..., regexp: bool = ..., smart_strings: bool = ...) -> XPathDocumentEvaluator
 
 - case: xpath_evaluation_result
   main: |

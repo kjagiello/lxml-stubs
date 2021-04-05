@@ -1,4 +1,4 @@
-from typing import Any, Callable, Mapping, Optional, Type, TypeVar
+from typing import Any, Callable, Mapping, Optional, TypeVar
 
 from ._types import _NSMapArg, basestring
 from .etree import _Element
@@ -8,7 +8,7 @@ _T = TypeVar("_T")
 class ElementMaker:
     def __init__(
         self,
-        typemap: Optional[Mapping[Type[_T], Callable[[_Element, _T], None]]] = ...,
+        typemap: Optional[Mapping[Any, Callable[[_Element, Any], None]]] = ...,
         namespace: Optional[str] = ...,
         nsmap: _NSMapArg = ...,
         # makeelement is callable of same arg as etree.Element()

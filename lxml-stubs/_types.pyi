@@ -42,24 +42,41 @@ class SupportsItems(Protocol[_KT_co, _VT_co]):
 class SupportsWrite(Protocol[_T_contra]):
     def write(self, __s: _T_contra) -> Any: ...
 
+# Old aliases, to be replaced by semantic ones
+#
 _DictAnyStr = Union[Dict[str, str], Dict[bytes, bytes]]
 _Dict_Tuple2AnyStr_Any = Union[Dict[Tuple[str, str], Any], Tuple[bytes, bytes], Any]
 
+##########################################################
+# BEGIN OF HAZMAT
+#
+# - Really wish I can use Mapping[Optional[basestring], basestring], *BUT*
+#   keys in typing.Mapping is invariant, unlike values which are covariant.
+#   Therefore Mapping[str, ...] is incompatible with Mapping[basestring, ...]
+#   or even Mapping[Optional[str], ...]
+#
 # - Prefix and URI are encoded separately as input arg, so no need for AnyStr.
-# - Namespace prefix/uri in lxml is only documented in form of mapping
-#   officially.
 #
-#   Although some places also accept alternative structures (e.g. ElementMaker
-#   accepts a list of (prefix,uri) pairs due to dict() conversion), they are
-#   considered implementation detail and not guaranteed to useful globally.
-#   As example, _Element.find() and friends don't accept the list form as nsmap.
+# - Namespace prefix/uri is only documented officially in form of mapping.
+#   Although some places also accept alternative structures, they are not
+#   guaranteed to be useful globally. As an example, ElementMaker accepts
+#   a list of (prefix,uri) pairs due to dict() conversion, but such form
+#   is not acceptable for _Element.find() and friends.
 #
-_NSMapArg = Optional[Mapping[Optional[basestring], basestring]]
+_NSMapArg = Optional[Mapping[Any, basestring]]
 
 # Default NS not acceptable for XPath and XSLT
 # https://lxml.de/xpathxslt.html#namespaces-and-prefixes
+_NonDefaultNSMapArg = Optional[
+    Union[
+        Mapping[str, basestring],
+        Mapping[bytes, basestring],
+    ]
+]
+
 #
-_NonDefaultNSMapArg = Optional[Mapping[basestring, basestring]]
+# END OF HAZMAT
+##########################################################
 
 _ExtensionArg = Optional[
     Mapping[
