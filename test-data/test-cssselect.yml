@@ -1,55 +1,100 @@
-- case: cssselect_create_selector
+- case: cssselect_create_selector_args
   parametrized:
-    - val: sel
-      rt: lxml.cssselect.CSSSelector
-    - val: sel.css
+    - args: expr
+    - args: expr, ns
+    - args: expr, ns, tr1
+    - args: expr, translator=tr2, namespaces=None
+    - args: translator=tr1, css=expr
+  main: |
+    from typing_extensions import Literal
+    from lxml.cssselect import CSSSelector, LxmlTranslator
+    expr = '#id'
+    rdfns = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#'
+    ns = {'rdf': rdfns}
+    tr1: Literal['html']
+    tr2: LxmlTranslator
+    sel = CSSSelector({{ args }})
+
+- case: cssselect_create_selector_bad_args1
+  parametrized:
+    - args: byte_expr
+      pos: 1
+      wrong_type: bytes
+      exp_type: str
+    - args: expr, bad_ns
+      pos: 2
+      wrong_type: Dict[None, None]
+      exp_type: Union[Mapping[str, Union[str, bytes]], Mapping[bytes, Union[str, bytes]], None]
+  main: |
+    from lxml.cssselect import CSSSelector
+    expr = '#id'
+    byte_expr = b'#id'
+    bad_ns = {None: None}
+    sel = CSSSelector({{ args }})  # E: Argument {{ pos }} to "CSSSelector" has incompatible type "{{ wrong_type }}"; expected "{{ exp_type }}"
+
+- case: cssselect_create_selector_bad_args2
+  main: |
+    from lxml.cssselect import CSSSelector
+    _ = CSSSelector('#id', None, 'junk')
+    _ = CSSSelector('#id', badarg=None)
+    _ = CSSSelector('#id', None, 'xml', 1)
+  out: |
+    main:2: error: Argument 3 to "CSSSelector" has incompatible type "Literal['junk']"; expected "Union[LxmlTranslator, Literal['xml'], Literal['html'], Literal['xhtml']]"
+    main:3: error: Unexpected keyword argument "badarg" for "CSSSelector"
+    main:4: error: Too many arguments for "CSSSelector"
+
+- case: cssselect_cssselector_properties
+  parametrized:
+    - prop: css
       rt: builtins.str
-    - val: sel.path
+    - prop: path
       rt: builtins.str
   main: |
-    from lxml import cssselect
-    sel = cssselect.CSSSelector('#id')
-    reveal_type({{ val }})  # N: Revealed type is '{{ rt }}'
+    from lxml.cssselect import CSSSelector
+    sel: CSSSelector
+    reveal_type(sel.{{ prop }})  # N: Revealed type is '{{ rt }}'
 
 - case: cssselect_evaluation_of_selector
   main: |
     from lxml import etree
     from lxml.cssselect import CSSSelector
-    sel = CSSSelector('#id')
-    document = etree.fromstring("<doc></doc>")
-    result = sel(document)
-    reveal_type(result)  # N: Revealed type is 'builtins.list[lxml.etree._Element]'
+    sel: CSSSelector
+    root: etree._Element
+    reveal_type(sel(root))  # N: Revealed type is 'builtins.list[lxml.etree._Element]'
 
 - case: cssselect_method_for_xml
+  parametrized:
+    - args: expr
+    - args: expr, translator=tr
   main: |
+    from typing_extensions import Literal
     from lxml import etree
-    elem = etree.Element('doc')
-    result = elem.cssselect('doc junk')
-    reveal_type(result)  # N: Revealed type is 'builtins.list[lxml.etree._Element]'
-    result = elem.cssselect('tag', translator='xml')
+    elem: etree._Element
+    expr = 'tag'
+    tr: Literal['xml']
+    result = elem.cssselect({{ args }})
     reveal_type(result)  # N: Revealed type is 'builtins.list[lxml.etree._Element]'
 
 - case: cssselect_method_for_xml_bad_arg1
   parametrized:
   - args: expr1
     wrong_type: bytes
-  - args: expr2
+  - args: 42
     wrong_type: int
   main: |
     from lxml import etree
-    elem = etree.Element('doc')
+    elem: etree._Element
     expr1 = b'doc junk'
-    expr2 = 42
     result = elem.cssselect({{ args }})
   out: |
-    main:5: error: Argument 1 to "cssselect" of "_Element" has incompatible type "{{ wrong_type }}"; expected "str"
+    main:4: error: Argument 1 to "cssselect" of "_Element" has incompatible type "{{ wrong_type }}"; expected "str"
 
 - case: cssselect_method_for_xml_bad_arg2
   main: |
     from lxml import etree
-    elem = etree.Element('doc')
-    result = elem.cssselect('tag', 'xml')
-    result = elem.cssselect('tag', translator='junk')
+    elem: etree._Element
+    _ = elem.cssselect('tag', 'xml')
+    _ = elem.cssselect('tag', translator='junk')
   out: |
     main:3: error: Too many positional arguments for "cssselect" of "_Element"
     main:4: error: Argument "translator" to "cssselect" of "_Element" has incompatible type "Literal['junk']"; expected "Union[LxmlTranslator, Literal['xml'], Literal['html'], Literal['xhtml']]"
@@ -59,13 +104,9 @@
     - args: expr
     - args: expr, translator
   main: |
-    import sys
-    if sys.version_info < (3, 8):
-      from typing_extensions import Literal
-    else:
-      from typing import Literal
+    from typing_extensions import Literal
     from lxml import html
-    elem = html.Element('div')
+    elem: html.HtmlElement
     expr = 'ul > li'
     translator: Literal['xhtml']
     result = elem.cssselect({{ args }})
@@ -73,23 +114,24 @@
 
 - case: cssselect_method_for_html_bad_arg1
   parametrized:
-    - args: expr1
+    - args: bad_expr
       wrong_type: bytes
-    - args: expr2
+    - args: 42
       wrong_type: int
   main: |
     from lxml import html
-    elem = html.Element('div')
-    expr1 = b'ul > li'
-    expr2 = 42
-    result = elem.cssselect({{ args }})
+    elem: html.HtmlElement
+    bad_expr = b'ul > li'
+    _ = elem.cssselect({{ args }})
   out: |
-    main:5: error: Argument 1 to "cssselect" of "HtmlElement" has incompatible type "{{ wrong_type }}"; expected "str"
+    main:4: error: Argument 1 to "cssselect" of "HtmlElement" has incompatible type "{{ wrong_type }}"; expected "str"
 
 - case: cssselect_method_for_html_bad_arg2
   main: |
     from lxml import html
-    elem = html.Element('div')
-    result = elem.cssselect('ul > li', 'junk')
+    elem: html.HtmlElement
+    _ = elem.cssselect('ul > li', 'junk')
+    _ = elem.cssselect('ul > li', 'xhtml', 0)
   out: |
     main:3: error: Argument 2 to "cssselect" of "HtmlElement" has incompatible type "Literal['junk']"; expected "Union[LxmlTranslator, Literal['xml'], Literal['html'], Literal['xhtml']]"
+    main:4: error: Too many arguments for "cssselect" of "HtmlElement"
