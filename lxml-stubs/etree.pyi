@@ -329,9 +329,11 @@ class _Element(Iterable[_Element], Sized):
         self,
         _tag: _TextArg,
         # Final result is sort of like {**attrib, **_extra}
-        attrib: Optional[SupportsItems[_TextArg, _TextArg]] = ...,
+        attrib: Optional[SupportsItems[_TextArg, basestring]] = ...,
+        # TODO Any method using _setNodeNamespaces() in calling stack would
+        # need another round of review
         nsmap: _NSMapArg = ...,
-        **_extra: _TextArg,
+        **_extra: basestring,
     ) -> _Element: ...
     def find(
         self, path: _ElemPathArg, namespaces: _NSMapArg = ...

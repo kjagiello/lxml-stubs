@@ -1,9 +1,9 @@
 import sys
 from typing import (
-    AbstractSet,
     Any,
     Callable,
     Dict,
+    Iterable,
     Mapping,
     Optional,
     Tuple,
@@ -37,7 +37,7 @@ if sys.version_info > (3,):
 #
 
 class SupportsItems(Protocol[_KT_co, _VT_co]):
-    def items(self) -> AbstractSet[Tuple[_KT_co, _VT_co]]: ...
+    def items(self) -> Iterable[Tuple[_KT_co, _VT_co]]: ...
 
 class SupportsWrite(Protocol[_T_contra]):
     def write(self, __s: _T_contra) -> Any: ...
