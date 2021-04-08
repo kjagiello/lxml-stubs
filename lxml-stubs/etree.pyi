@@ -8,19 +8,19 @@
 #
 # - Read-only cython attributes are emulated with read-only properties
 #
-# - (Almost?) all writable properties have type Any, with their actual
-#   types in comment for future reference.
+# - For writable properties, their setters accept typing.Any as value,
+#   with the actual types in comment for future reference.
 #   Lxml accepts some incompatible types as input argument for writable
 #   properties, and they are canonicalized under the hook.
 #   (For example, proactive str/bytes coercion occurs throughout lxml)
-#   But both mypy and pyright aren't happy about getting/setting
-#   different types for @property, treating them as error:
-#   - https://github.com/python/mypy/issues/3004
-#   - https://github.com/microsoft/pyright/issues/993
+#
 #   Although such practice helped users by alleviating them the need
 #   to manually convert values to correct types, Guido is reported to
 #   dislike it too. That means throw baby out of window with bathwater
-#   altogether, since such issue might never see the light.
+#   altogether, since such issue might never see the light. Currently,
+#   both mypy and pyright are treating them as error:
+#   - https://github.com/python/mypy/issues/3004
+#   - https://github.com/microsoft/pyright/issues/993
 #
 
 import logging
@@ -187,24 +187,38 @@ class _Element(Iterable[_Element], Sized):
     #
     # Common properties
     #
-    tag: Any  # getter: str  setter: _TextArg
+    @property
+    def tag(self) -> str: ...
+    @tag.setter  # _TextArg
+    def tag(self, value: Any) -> None: ...
     @property
     def attrib(self) -> _Attrib: ...
-    text: Any  # getter: Optional[str], setter: Optional[Union[_TextArg, CDATA]])
-    tail: Any  # ditto
+    @property
+    def text(self) -> Optional[str]: ...
+    @text.setter  # Optional[Union[_TextArg, CDATA]]
+    def text(self, value: Any) -> None: ...
+    @property
+    def tail(self) -> Optional[str]: ...
+    @tail.setter  # Optional[Union[_TextArg, CDATA]]
+    def tail(self, value: Any) -> None: ...
     #
     # _Element-only properties
     #
-    # Although all of them are marked as read-only in source comment,
-    # 'sourceline' and 'base' provide __set__ method
-    # --- and they do work.
+    # 'sourceline' and 'base' properties provide __set__ method -- and they
+    # work fine, despite being marked as read-only in source code comment.
     #
     @property
     def prefix(self) -> Optional[str]: ...
-    sourceline: Any  # getter: Optional[int],  setter: int
+    @property
+    def sourceline(self) -> Optional[int]: ...
+    @sourceline.setter  # int
+    def sourceline(self, value: Any) -> None: ...
     @property
     def nsmap(self) -> Dict[Optional[str], str]: ...
-    base: Any  # getter: Optional[str], setter: Optional[basestring](?)
+    @property
+    def base(self) -> Optional[str]: ...
+    @base.setter  # Optional[basestring]
+    def base(self, value: Any) -> None: ...
     #
     # Accessors
     #
@@ -453,27 +467,34 @@ class _ElementTree:
         **_variables: Any,
     ) -> _ElementTree: ...
 
+#
 # Element types and content node types
-# Don't need __ContentOnlyElement in current state, when
-# it is just a noop layer in class inheritance
-# Maybe re-add if it is decided to override various
-# _Element methods
+#
+# TODO Although __ContentOnlyElement is unused in current state (as
+# it is just a noop layer in class inheritance), probably there is
+# need to discouple from _Element soon. See _Entity below for example
+# of *really* incompatible overrides.
 # class __ContentOnlyElement(_Element): ...
+
 class _Comment(_Element): ...
 
 class _ProcessingInstruction(_Element):
-    target: Any  # getter: str, setter: basestring
+    @property
+    def target(self) -> str: ...
+    @target.setter  # basestring
+    def target(self, value: Any) -> None: ...
     @property
     def attrib(self) -> Dict[str, str]: ...  # type: ignore[override]
 
 class _Entity(_Element):
     # FIXME _Entity.text is a read-only property, overriding
     # the read-write _Element.text. Mypy KABOOMs upon this.
-    # Probably need to consider discoupling
-    # __ContentOnlyElement from _Element
     # @property
     # def text(self) -> str: ...
-    name: Any  # getter: str, setter: basestring
+    @property
+    def name(self) -> str: ...
+    @name.setter  # basestring
+    def name(self, value: Any) -> None: ...
 
 class CDATA:
     def __init__(self, data: basestring) -> None: ...
