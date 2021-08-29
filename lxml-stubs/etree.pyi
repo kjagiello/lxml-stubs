@@ -56,14 +56,19 @@ from ._types import (
     _TextArg,
     basestring,
 )
+from ._parser import (
+    _BaseParser,
+    _FeedParser,
+    ParserTarget as ParserTarget,
+)
 from ._xmlerror import _BaseErrorLog, _ErrorLog, _LogEntry
 from ._xpath import _XPathEvaluatorBase, _XPathObject, _XPathVarArg
 from .cssselect import _CSSTransArg
 
 if sys.version_info < (3, 8):
-    from typing_extensions import Literal, Protocol
+    from typing_extensions import Literal
 else:
-    from typing import Literal, Protocol
+    from typing import Literal
 
 #
 # Basic variables and constants
@@ -567,76 +572,6 @@ class _XSLTResultTree(_ElementTree, SupportsBytes):
 
 class _XSLTQuotedStringParam: ...
 
-# https://lxml.de/parsing.html#the-target-parser-interface
-class ParserTarget(Protocol):
-    def comment(self, text: basestring) -> None: ...
-    def close(self) -> Any: ...
-    def data(self, data: basestring) -> None: ...
-    def end(self, tag: basestring) -> None: ...
-    def start(self, tag: basestring, attrib: Dict[basestring, basestring]) -> None: ...
-
-class _BaseParser:
-    def copy(self) -> _BaseParser: ...
-    def makeelement(
-        self,
-        _tag: basestring,
-        attrib: Optional[Union[_DictAnyStr, _Attrib]] = ...,
-        nsmap: _NSMapArg = ...,
-        **_extra: Any,
-    ) -> _Element: ...
-    def setElementClassLookup(
-        self, lookup: Optional[ElementClassLookup] = ...
-    ) -> None: ...
-    def set_element_class_lookup(
-        self, lookup: Optional[ElementClassLookup] = ...
-    ) -> None: ...
-    @property
-    def error_log(self) -> _ErrorLog: ...
-
-class _FeedParser(_BaseParser):
-    def close(self) -> _Element: ...
-    def feed(self, data: basestring) -> None: ...
-
-class XMLParser(_FeedParser):
-    def __init__(
-        self,
-        encoding: Optional[basestring] = ...,
-        attribute_defaults: bool = ...,
-        dtd_validation: bool = ...,
-        load_dtd: bool = ...,
-        no_network: bool = ...,
-        ns_clean: bool = ...,
-        recover: bool = ...,
-        schema: Optional[XMLSchema] = ...,
-        huge_tree: bool = ...,
-        remove_blank_text: bool = ...,
-        resolve_entities: bool = ...,
-        remove_comments: bool = ...,
-        remove_pis: bool = ...,
-        strip_cdata: bool = ...,
-        collect_ids: bool = ...,
-        target: Optional[ParserTarget] = ...,
-        compact: bool = ...,
-    ) -> None: ...
-    resolvers = ...  # type: _ResolverRegistry
-
-class HTMLParser(_FeedParser):
-    def __init__(
-        self,
-        encoding: Optional[basestring] = ...,
-        collect_ids: bool = ...,
-        compact: bool = ...,
-        huge_tree: bool = ...,
-        no_network: bool = ...,
-        recover: bool = ...,
-        remove_blank_text: bool = ...,
-        remove_comments: bool = ...,
-        remove_pis: bool = ...,
-        schema: Optional[XMLSchema] = ...,
-        strip_cdata: bool = ...,
-        target: Optional[ParserTarget] = ...,
-    ) -> None: ...
-
 class _ResolverRegistry:
     def add(self, resolver: Resolver) -> None: ...
     def remove(self, resolver: Resolver) -> None: ...
@@ -787,8 +722,6 @@ class LxmlError(Error):
 
 class DocumentInvalid(LxmlError): ...
 class LxmlSyntaxError(LxmlError, SyntaxError): ...
-class ParseError(LxmlSyntaxError): ...
-class XMLSyntaxError(ParseError): ...
 
 class _Validator:
     @property
@@ -859,6 +792,155 @@ class CustomElementClassLookup(FallbackElementClassLookup):
 # ParserBasedElementClassLookup
 # PythonElementClassLookup
 # def set_element_class_lookup()
+
+#
+# Public members of parser.pxi
+#
+
+class ParseError(LxmlSyntaxError):
+    lineno: int
+    offset: int
+    # XXX OK, now it might make sense to generate all error constants
+    # since they are behaving like IntEnum. But it's low priority.
+    code: int
+    filename: Optional[str]
+    position: Tuple[int, int]
+    def __init__(
+        self,
+        message: Any,
+        code: int,
+        line: int,
+        column: int,
+        filename: Optional[str] = ...,
+    ) -> None: ...
+
+class XMLSyntaxError(ParseError): ...
+class ParserError(LxmlError): ...
+
+def set_default_parser(parser: Optional[_BaseParser]) -> None: ...
+def get_default_parser() -> Optional[_BaseParser]: ...
+
+# Markup parsers receive very similar arguments
+class XMLParser(_FeedParser):
+    def __init__(
+        self,
+        *,
+        encoding: Optional[basestring] = ...,
+        attribute_defaults: bool = ...,
+        dtd_validation: bool = ...,
+        load_dtd: bool = ...,
+        no_network: bool = ...,
+        ns_clean: bool = ...,
+        recover: bool = ...,
+        schema: Optional[XMLSchema] = ...,
+        huge_tree: bool = ...,
+        remove_blank_text: bool = ...,
+        resolve_entities: bool = ...,
+        remove_comments: bool = ...,
+        remove_pis: bool = ...,
+        strip_cdata: bool = ...,
+        collect_ids: bool = ...,
+        target: Optional[ParserTarget] = ...,
+        compact: bool = ...,
+    ) -> None: ...
+
+class XMLPullParser(XMLParser):
+    def __init__(
+        self,
+        events: Optional[Iterable[str]] = ...,
+        *,
+        tag: _TagFilter = ...,
+        base_url: Optional[basestring] = ...,
+        # All arguments from XMLParser
+        encoding: Optional[basestring] = ...,
+        attribute_defaults: bool = ...,
+        dtd_validation: bool = ...,
+        load_dtd: bool = ...,
+        no_network: bool = ...,
+        ns_clean: bool = ...,
+        recover: bool = ...,
+        schema: Optional[XMLSchema] = ...,
+        huge_tree: bool = ...,
+        remove_blank_text: bool = ...,
+        resolve_entities: bool = ...,
+        remove_comments: bool = ...,
+        remove_pis: bool = ...,
+        strip_cdata: bool = ...,
+        collect_ids: bool = ...,
+        target: Optional[ParserTarget] = ...,
+        compact: bool = ...,
+    ) -> None: ...
+    # The iterated items from pull parser events may return anything.
+    # Even etree.TreeBuilder, which produce element nodes by default, allows
+    # overriding factory functions via arguments to generate anything.
+    # Same applies to HTMLPullParser below.
+    def read_events(self) -> Iterator[Tuple[str, Any]]: ...
+
+# ET compatible parser should be nearly identical to XMLParser
+# in nature, but somehow doesn't have 'collect_ids' argument
+class ETCompatXMLParser(XMLParser):
+    def __init__(
+        self,
+        *,
+        encoding: Optional[basestring] = ...,
+        attribute_defaults: bool = ...,
+        dtd_validation: bool = ...,
+        load_dtd: bool = ...,
+        no_network: bool = ...,
+        ns_clean: bool = ...,
+        recover: bool = ...,
+        schema: Optional[XMLSchema] = ...,
+        huge_tree: bool = ...,
+        remove_blank_text: bool = ...,
+        resolve_entities: bool = ...,
+        remove_comments: bool = ...,
+        remove_pis: bool = ...,
+        strip_cdata: bool = ...,
+        target: Optional[ParserTarget] = ...,
+        compact: bool = ...,
+    ) -> None: ...
+
+class HTMLParser(_FeedParser):
+    def __init__(
+        self,
+        *,
+        encoding: Optional[basestring] = ...,
+        remove_blank_text: bool = ...,
+        remove_comments: bool = ...,
+        remove_pis: bool = ...,
+        strip_cdata: bool = ...,
+        no_network: bool = ...,
+        target: Optional[ParserTarget] = ...,
+        schema: Optional[XMLSchema] = ...,
+        recover: bool = ...,
+        compact: bool = ...,
+        collect_ids: bool = ...,
+        huge_tree: bool = ...,
+    ) -> None: ...
+
+class HTMLPullParser(HTMLParser):
+    def __init__(
+        self,
+        events: Optional[Iterable[str]] = ...,
+        *,
+        tag: _TagFilter = ...,
+        base_url: Optional[basestring] = ...,
+        # All arguments from HTMLParser
+                encoding: Optional[basestring] = ...,
+        remove_blank_text: bool = ...,
+        remove_comments: bool = ...,
+        remove_pis: bool = ...,
+        strip_cdata: bool = ...,
+        no_network: bool = ...,
+        target: Optional[ParserTarget] = ...,
+        schema: Optional[XMLSchema] = ...,
+        recover: bool = ...,
+        compact: bool = ...,
+        collect_ids: bool = ...,
+        huge_tree: bool = ...,
+    ) -> None: ...
+    def read_events(self) -> Iterator[Tuple[str, Any]]: ...
+
 
 #
 # Public members of xmlerror.pxi

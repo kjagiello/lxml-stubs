@@ -43,6 +43,7 @@ from typing import (
 )
 
 from .. import etree
+from .._parser import _BaseParser
 from .._types import (
     SupportsItems,
     _ExtensionArg,
@@ -545,7 +546,7 @@ def Element(
 # fromstring(text, parser, *, base_url)
 def document_fromstring(
     html: basestring,
-    parser: Optional[etree._BaseParser] = ...,
+    parser: Optional[_BaseParser] = ...,
     ensure_head_body: bool = ...,
     *,
     base_url: Optional[str] = ...,
@@ -554,25 +555,25 @@ def fragments_fromstring(
     html: basestring,
     no_leading_text: bool = ...,
     base_url: Optional[str] = ...,
-    parser: Optional[etree._BaseParser] = ...,
+    parser: Optional[_BaseParser] = ...,
     **kw: Any,
 ) -> List[_AnyHtmlElement]: ...
 def fragment_fromstring(
     html: basestring,
     create_parent: bool = ...,
     base_url: Optional[str] = ...,
-    parser: Optional[etree._BaseParser] = ...,
+    parser: Optional[_BaseParser] = ...,
     **kw: Any,
 ) -> _AnyHtmlElement: ...
 def fromstring(
     html: basestring,
     base_url: Optional[str] = ...,
-    parser: Optional[etree._BaseParser] = ...,
+    parser: Optional[_BaseParser] = ...,
     **kw: Any,
 ) -> _AnyHtmlElement: ...
 def parse(
     filename_or_url: Any,
-    parser: Optional[etree._BaseParser] = ...,
+    parser: Optional[_BaseParser] = ...,
     base_url: Optional[str] = ...,
     **kw: Any,
 ) -> etree._ElementTree: ...
